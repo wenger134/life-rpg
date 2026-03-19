@@ -1417,7 +1417,7 @@ function updateActionPreview() {
 }
 
 async function confirmAction() {
-  if (!currentAction) { alert('currentAction 是空的！'); return; }
+  if (!currentAction) return;
   const vals = {};
   for (const f of (currentAction.fields || [])) {
     const el = document.getElementById(`af_${f.key}`);
