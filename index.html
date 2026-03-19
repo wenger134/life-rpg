@@ -6,602 +6,175 @@
 <title>人生经营游戏</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap');
-
-  :root {
-    --bg: #0a0a0f;
-    --bg2: #12121a;
-    --bg3: #1a1a2e;
-    --card: #16213e;
-    --border: #0f3460;
-    --primary: #00ff88;
-    --primary-dim: #00ff8833;
-    --danger: #ff4466;
-    --danger-dim: #ff446622;
-    --warn: #ffaa00;
-    --warn-dim: #ffaa0022;
-    --blue: #00aaff;
-    --blue-dim: #00aaff22;
-    --text: #e0e0ff;
-    --text-dim: #5a5a8a;
-    --pixel: 'Press Start 2P', monospace;
-    --sans: 'Noto Sans SC', sans-serif;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-    padding-bottom: 80px;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.012) 2px, rgba(0,255,136,0.012) 4px);
-    pointer-events: none;
-    z-index: 9999;
-  }
-
-  /* ===== HEADER ===== */
-  .header {
-    background: var(--bg2);
-    border-bottom: 2px solid var(--primary);
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 0 24px var(--primary-dim);
-  }
-  .header-title {
-    font-family: var(--pixel);
-    font-size: 10px;
-    color: var(--primary);
-    text-shadow: 0 0 10px var(--primary);
-  }
-  .header-right { text-align: right; }
-  .header-label { font-size: 10px; color: var(--text-dim); }
-  .header-amount {
-    font-family: var(--pixel);
-    font-size: 13px;
-    color: var(--primary);
-    text-shadow: 0 0 8px var(--primary);
-  }
-  .header-amount.neg { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
-
-  /* ===== NAV ===== */
-  .nav {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--bg2);
-    border-top: 2px solid var(--border);
-    display: flex;
-    align-items: center;
-    z-index: 100;
-    height: 64px;
-  }
-  .nav-item {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    cursor: pointer;
-    border: none;
-    background: none;
-    color: var(--text-dim);
-    font-size: 10px;
-    font-family: var(--sans);
-    transition: all 0.2s;
-  }
-  .nav-item .nav-icon { font-size: 20px; }
-  .nav-item.active { color: var(--primary); }
-  .nav-item.active .nav-icon { filter: drop-shadow(0 0 4px var(--primary)); }
-
-  .nav-center {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-plus {
-    width: 52px;
-    height: 52px;
-    background: var(--primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    color: var(--bg);
-    font-weight: 900;
-    box-shadow: 0 0 20px var(--primary-dim), 0 4px 12px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    margin-bottom: 8px;
-  }
-  .nav-plus:active { transform: scale(0.92); }
-
-  /* ===== PAGES ===== */
-  .page { display: none; padding: 14px 14px 10px; }
-  .page.active { display: block; }
-
-  /* ===== CARDS ===== */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .card-title {
-    font-family: var(--pixel);
-    font-size: 8px;
-    color: var(--blue);
-    margin-bottom: 14px;
-    letter-spacing: 1px;
-  }
-
-  /* ===== STATS ===== */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  .stat-card {
-    background: var(--bg3);
-    border-radius: 10px;
-    padding: 14px;
-    text-align: center;
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .stat-card:active { transform: scale(0.97); }
-  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-  .stat-card.green::before { background: var(--primary); }
-  .stat-card.red::before { background: var(--danger); }
-  .stat-card.blue::before { background: var(--blue); }
-  .stat-card.warn::before { background: var(--warn); }
-  .stat-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
-  .stat-value { font-family: var(--pixel); font-size: 11px; line-height: 1.6; }
-  .stat-value.green { color: var(--primary); text-shadow: 0 0 6px var(--primary); }
-  .stat-value.red { color: var(--danger); text-shadow: 0 0 6px var(--danger); }
-  .stat-value.blue { color: var(--blue); text-shadow: 0 0 6px var(--blue); }
-  .stat-value.warn { color: var(--warn); text-shadow: 0 0 6px var(--warn); }
-
-  /* ===== PROGRESS ===== */
-  .progress-wrap {
-    background: var(--bg);
-    border-radius: 4px;
-    height: 8px;
-    overflow: hidden;
-    margin-top: 6px;
-    border: 1px solid var(--border);
-  }
-  .progress-bar {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.6s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .progress-bar::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%; bottom: 0; width: 60%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-    animation: shimmer 2s infinite;
-  }
-  @keyframes shimmer { to { left: 150%; } }
-  .progress-bar.green { background: linear-gradient(90deg, var(--primary), #00ffcc); }
-  .progress-bar.blue { background: linear-gradient(90deg, var(--blue), #8844ff); }
-
-  /* ===== BUTTONS ===== */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 700;
-    transition: all 0.2s;
-  }
-  .btn:active { transform: scale(0.96); }
-  .btn-primary { background: var(--primary); color: var(--bg); box-shadow: 0 0 12px var(--primary-dim); }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .btn-block { width: 100%; }
-  .btn-warn { background: var(--warn); color: var(--bg); }
-
-  /* ===== GROUP SECTION ===== */
-  .group-section { margin-bottom: 16px; }
-  .group-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 0 2px;
-  }
-  .group-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-  }
-  .group-line { flex: 1; height: 1px; background: var(--border); }
-
-  /* ===== ACTION GRID ===== */
-  .action-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-  }
-  .action-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 6px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: var(--text);
-    font-family: var(--sans);
-    user-select: none;
-  }
-  .action-btn:active { transform: scale(0.95); }
-  .action-btn.income-btn:hover, .action-btn.income-btn:active { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-dim); }
-  .action-btn.expense-btn:hover, .action-btn.expense-btn:active { border-color: var(--danger); box-shadow: 0 0 10px var(--danger-dim); }
-  .action-btn.locked { opacity: 0.35; cursor: not-allowed; }
-  .a-icon { font-size: 22px; margin-bottom: 5px; }
-  .a-label { font-size: 11px; font-weight: 700; line-height: 1.3; }
-  .a-amount { font-family: var(--pixel); font-size: 8px; margin-top: 4px; }
-  .a-amount.pos { color: var(--primary); }
-  .a-amount.neg { color: var(--danger); }
-  .a-lock { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
-
-  /* ===== MODAL ===== */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.88);
-    z-index: 1000;
-    display: flex;
-    align-items: flex-end;
-    padding: 0;
-    backdrop-filter: blur(4px);
-  }
-  .modal-overlay.center { align-items: center; padding: 20px; }
-  .modal-overlay.hidden { display: none; }
-  .modal {
-    background: var(--bg2);
-    border: 1px solid var(--primary);
-    border-radius: 20px 20px 0 0;
-    padding: 24px 20px 36px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 -8px 40px var(--primary-dim);
-    animation: slideUp 0.25s ease;
-  }
-  .modal.center-modal {
-    border-radius: 16px;
-    max-width: 420px;
-    animation: zoomIn 0.2s ease;
-  }
-  .modal.danger { border-color: var(--danger); box-shadow: 0 -8px 40px var(--danger-dim); }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-  .modal-drag {
-    width: 40px; height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 18px;
-  }
-  .modal-title {
-    font-family: var(--pixel);
-    font-size: 9px;
-    color: var(--primary);
-    margin-bottom: 18px;
-    text-shadow: 0 0 8px var(--primary);
-  }
-  .modal.danger .modal-title { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
-
-  /* ===== FORM ===== */
-  .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; display: block; }
-  .form-input, .form-select {
-    width: 100%;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 11px 14px;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s;
-    -webkit-appearance: none;
-  }
-  .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 8px var(--primary-dim); }
-  .form-select option { background: var(--bg3); }
-
-  .amount-preview {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-    margin-bottom: 16px;
-  }
-  .preview-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
-  .preview-value { font-family: var(--pixel); font-size: 18px; }
-  .preview-value.pos { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
-  .preview-value.neg { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
-
-  .modal-btns { display: flex; gap: 10px; }
-  .modal-btns .btn { flex: 1; padding: 13px; font-size: 14px; }
-
-  /* ===== 子选择（有趣/无趣） ===== */
-  .sub-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
-  .sub-select-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--sans);
-    color: var(--text);
-  }
-  .sub-select-btn:active { transform: scale(0.96); }
-  .sub-select-btn .ss-icon { font-size: 28px; margin-bottom: 6px; }
-  .sub-select-btn .ss-label { font-size: 13px; font-weight: 700; }
-  .sub-select-btn .ss-desc { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
-  .sub-select-btn .ss-amount { font-family: var(--pixel); font-size: 9px; color: var(--primary); margin-top: 5px; }
-  .sub-select-btn:hover { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-dim); }
-
-  /* ===== 证书等级 ===== */
-  .cert-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .cert-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 4px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text);
-    font-size: 11px;
-  }
-  .cert-btn.selected { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
-  .cert-btn .cert-val { font-family: var(--pixel); font-size: 8px; color: var(--primary); margin-top: 4px; }
-
-  /* ===== 账本流水 ===== */
-  .record-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    gap: 12px;
-  }
-  .record-item:last-child { border-bottom: none; }
-  .record-icon { font-size: 22px; flex-shrink: 0; width: 32px; text-align: center; }
-  .record-info { flex: 1; min-width: 0; }
-  .record-cat { font-size: 13px; font-weight: 700; }
-  .record-note { font-size: 11px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .record-time { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
-  .record-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-  .record-amount { font-family: var(--pixel); font-size: 11px; }
-  .record-amount.pos { color: var(--primary); }
-  .record-amount.neg { color: var(--danger); }
-  .record-del {
-    font-size: 14px;
-    cursor: pointer;
-    color: var(--text-dim);
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    background: none;
-    border: none;
-    line-height: 1;
-  }
-  .record-del:hover { color: var(--danger); background: var(--danger-dim); }
-
-  /* ===== 账本筛选 ===== */
-  .filter-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
-  .filter-tabs::-webkit-scrollbar { display: none; }
-  .filter-tab {
-    flex-shrink: 0;
-    padding: 6px 14px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    color: var(--text-dim);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-  .filter-tab.active { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
-
-  /* ===== 橱柜 ===== */
-  .wishlist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .wish-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: all 0.2s;
-    position: relative;
-  }
-  .wish-card.affordable { border-color: var(--primary); box-shadow: 0 0 14px var(--primary-dim); }
-  .wish-img-wrap {
-    width: 100%;
-    aspect-ratio: 1;
-    background: var(--bg2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 42px;
-    overflow: hidden;
-  }
-  .wish-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  .wish-info { padding: 10px; }
-  .wish-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wish-price { font-family: var(--pixel); font-size: 9px; color: var(--warn); margin-bottom: 8px; }
-  .wish-badge {
-    position: absolute;
-    top: 7px; right: 7px;
-    font-size: 9px;
-    font-weight: 700;
-    padding: 3px 7px;
-    border-radius: 4px;
-  }
-  .wish-badge.can { background: var(--primary); color: var(--bg); }
-  .wish-badge.cant { background: rgba(0,0,0,0.6); color: var(--text-dim); border: 1px solid var(--border); }
-  .wish-actions { display: flex; gap: 6px; }
-
-  /* ===== 设置入口 ===== */
-  .settings-list { }
-  .settings-item {
-    display: flex;
-    align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    gap: 12px;
-    transition: all 0.2s;
-  }
-  .settings-item:last-child { border-bottom: none; }
-  .settings-item:active { opacity: 0.7; }
-  .settings-icon { font-size: 22px; width: 32px; text-align: center; flex-shrink: 0; }
-  .settings-label { flex: 1; font-size: 14px; font-weight: 700; }
-  .settings-arrow { color: var(--text-dim); font-size: 14px; }
-
-  /* ===== TOAST ===== */
-  .toast-container {
-    position: fixed;
-    top: 72px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9000;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-    pointer-events: none;
-  }
-  .toast {
-    background: var(--bg2);
-    border-radius: 8px;
-    padding: 10px 18px;
-    font-family: var(--pixel);
-    font-size: 9px;
-    animation: toastIn 0.3s ease;
-    white-space: nowrap;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    max-width: 90vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .toast.pos { border: 1px solid var(--primary); color: var(--primary); }
-  .toast.neg { border: 1px solid var(--danger); color: var(--danger); }
-  .toast.info { border: 1px solid var(--blue); color: var(--blue); }
-  @keyframes toastIn { from { opacity: 0; transform: translateY(-8px) scale(0.9); } to { opacity: 1; transform: none; } }
-
-  /* ===== EMPTY ===== */
-  .empty-state { text-align: center; padding: 36px 20px; color: var(--text-dim); }
-  .empty-state .e-icon { font-size: 38px; margin-bottom: 10px; }
-  .empty-state .e-text { font-size: 12px; line-height: 1.7; }
-
-  /* ===== IMG UPLOAD ===== */
-  .img-upload {
-    width: 100%;
-    aspect-ratio: 16/9;
-    background: var(--bg3);
-    border: 2px dashed var(--border);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
-    position: relative;
-    transition: border-color 0.2s;
-  }
-  .img-upload:hover { border-color: var(--primary); }
-  .img-upload img { width: 100%; height: 100%; object-fit: cover; }
-  .img-upload-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
-
-  .load-more {
-    text-align: center;
-    padding: 14px;
-    color: var(--text-dim);
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .load-more:hover { color: var(--primary); }
-
-  /* ===== 投资弹窗 ===== */
-  .invest-type-row { display: flex; gap: 8px; margin-bottom: 14px; }
-  .invest-type-btn {
-    flex: 1;
-    padding: 10px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-dim);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-    font-family: var(--sans);
-  }
-  .invest-type-btn.profit.active { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
-  .invest-type-btn.loss.active { border-color: var(--danger); color: var(--danger); background: var(--danger-dim); }
-
-  /* 删除确认弹窗 */
-  .confirm-modal-body { text-align: center; padding: 10px 0 20px; }
-  .confirm-icon { font-size: 44px; margin-bottom: 12px; }
-  .confirm-text { font-size: 14px; line-height: 1.7; color: var(--text-dim); }
-  .confirm-highlight { color: var(--text); font-weight: 700; }
-
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap');
+:root {
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a2e;--card:#16213e;--border:#0f3460;
+  --primary:#00ff88;--primary-dim:#00ff8833;--danger:#ff4466;--danger-dim:#ff446622;
+  --warn:#ffaa00;--warn-dim:#ffaa0022;--blue:#00aaff;--blue-dim:#00aaff22;
+  --text:#e0e0ff;--text-dim:#5a5a8a;
+  --pixel:'Press Start 2P',monospace;--sans:'Noto Sans SC',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;padding-bottom:80px}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,.012) 2px,rgba(0,255,136,.012) 4px);pointer-events:none;z-index:9999}
+.header{background:var(--bg2);border-bottom:2px solid var(--primary);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 0 24px var(--primary-dim)}
+.header-title{font-family:var(--pixel);font-size:10px;color:var(--primary);text-shadow:0 0 10px var(--primary)}
+.header-right{text-align:right}
+.header-label{font-size:10px;color:var(--text-dim)}
+.header-amount{font-family:var(--pixel);font-size:13px;color:var(--primary);text-shadow:0 0 8px var(--primary)}
+.header-amount.neg{color:var(--danger);text-shadow:0 0 8px var(--danger)}
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:2px solid var(--border);display:flex;align-items:center;z-index:100;height:64px}
+.nav-item{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:none;color:var(--text-dim);font-size:10px;font-family:var(--sans);transition:all .2s}
+.nav-item .nav-icon{font-size:20px}
+.nav-item.active{color:var(--primary)}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 4px var(--primary))}
+.nav-center{flex:1;display:flex;align-items:center;justify-content:center}
+.nav-plus{width:52px;height:52px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--bg);font-weight:900;box-shadow:0 0 20px var(--primary-dim),0 4px 12px rgba(0,0,0,.4);cursor:pointer;transition:all .2s;border:none;margin-bottom:8px}
+.nav-plus:active{transform:scale(.92)}
+.page{display:none;padding:14px 14px 10px}
+.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.card-title{font-family:var(--pixel);font-size:8px;color:var(--blue);margin-bottom:14px;letter-spacing:1px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-card{background:var(--bg3);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border);position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
+.stat-card:active{transform:scale(.97)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.green::before{background:var(--primary)}
+.stat-card.red::before{background:var(--danger)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-card.warn::before{background:var(--warn)}
+.stat-label{font-size:11px;color:var(--text-dim);margin-bottom:6px}
+.stat-value{font-family:var(--pixel);font-size:11px;line-height:1.6}
+.stat-value.green{color:var(--primary);text-shadow:0 0 6px var(--primary)}
+.stat-value.red{color:var(--danger);text-shadow:0 0 6px var(--danger)}
+.stat-value.blue{color:var(--blue);text-shadow:0 0 6px var(--blue)}
+.stat-value.warn{color:var(--warn);text-shadow:0 0 6px var(--warn)}
+.progress-wrap{background:var(--bg);border-radius:4px;height:8px;overflow:hidden;margin-top:6px;border:1px solid var(--border)}
+.progress-bar{height:100%;border-radius:4px;transition:width .6s ease;position:relative;overflow:hidden}
+.progress-bar::after{content:'';position:absolute;top:0;left:-100%;bottom:0;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:shimmer 2s infinite}
+@keyframes shimmer{to{left:150%}}
+.progress-bar.green{background:linear-gradient(90deg,var(--primary),#00ffcc)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:700;transition:all .2s}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--primary);color:var(--bg);box-shadow:0 0 12px var(--primary-dim)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-block{width:100%}
+.group-section{margin-bottom:16px}
+.group-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 2px}
+.group-label{font-size:12px;font-weight:700;color:var(--text-dim);letter-spacing:1px}
+.group-line{flex:1;height:1px;background:var(--border)}
+.action-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.action-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .15s;color:var(--text);font-family:var(--sans);user-select:none}
+.action-btn:active{transform:scale(.95)}
+.action-btn.income-btn:active{border-color:var(--primary);box-shadow:0 0 10px var(--primary-dim)}
+.action-btn.expense-btn:active{border-color:var(--danger);box-shadow:0 0 10px var(--danger-dim)}
+.action-btn.locked{opacity:.35;cursor:not-allowed}
+.a-icon{font-size:22px;margin-bottom:5px}
+.a-label{font-size:11px;font-weight:700;line-height:1.3}
+.a-amount{font-family:var(--pixel);font-size:8px;margin-top:4px}
+.a-amount.pos{color:var(--primary)}
+.a-amount.neg{color:var(--danger)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:flex;align-items:flex-end;backdrop-filter:blur(4px)}
+.modal-overlay.center{align-items:center;padding:20px}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--bg2);border:1px solid var(--primary);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px var(--primary-dim);animation:slideUp .25s ease}
+.modal.center-modal{border-radius:16px;max-width:420px;animation:zoomIn .2s ease}
+.modal.danger{border-color:var(--danger);box-shadow:0 -8px 40px var(--danger-dim)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes zoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.modal-drag{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-family:var(--pixel);font-size:9px;color:var(--primary);margin-bottom:18px;text-shadow:0 0 8px var(--primary)}
+.modal.danger .modal-title{color:var(--danger);text-shadow:0 0 8px var(--danger)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;color:var(--text-dim);margin-bottom:6px;display:block}
+.form-input,.form-select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:var(--sans);font-size:15px;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.form-input:focus,.form-select:focus{border-color:var(--primary);box-shadow:0 0 8px var(--primary-dim)}
+.form-select option{background:var(--bg3)}
+.amount-preview{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;margin-bottom:16px}
+.preview-label{font-size:11px;color:var(--text-dim);margin-bottom:4px}
+.preview-value{font-family:var(--pixel);font-size:18px}
+.preview-value.pos{color:var(--primary);text-shadow:0 0 8px var(--primary)}
+.preview-value.neg{color:var(--danger);text-shadow:0 0 8px var(--danger)}
+.modal-btns{display:flex;gap:10px}
+.modal-btns .btn{flex:1;padding:13px;font-size:14px}
+.sub-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.sub-select-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px 10px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--sans);color:var(--text)}
+.sub-select-btn:active{transform:scale(.96);border-color:var(--primary)}
+.ss-icon{font-size:28px;margin-bottom:6px}
+.ss-label{font-size:13px;font-weight:700}
+.ss-desc{font-size:11px;color:var(--text-dim);margin-top:3px}
+.ss-amount{font-family:var(--pixel);font-size:9px;color:var(--primary);margin-top:5px}
+.cert-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cert-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 4px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text);font-size:11px}
+.cert-btn.selected{border-color:var(--primary);background:var(--primary-dim);color:var(--primary)}
+.cert-btn .cert-val{font-family:var(--pixel);font-size:8px;color:var(--primary);margin-top:4px}
+.record-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:12px}
+.record-item:last-child{border-bottom:none}
+.record-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+.record-info{flex:1;min-width:0}
+.record-cat{font-size:13px;font-weight:700}
+.record-note{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.record-time{font-size:10px;color:var(--text-dim);margin-top:2px}
+.record-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.record-amount{font-family:var(--pixel);font-size:11px}
+.record-amount.pos{color:var(--primary)}
+.record-amount.neg{color:var(--danger)}
+.record-del{font-size:14px;cursor:pointer;color:var(--text-dim);padding:2px 4px;border-radius:4px;transition:all .2s;background:none;border:none;line-height:1}
+.record-del:active{color:var(--danger)}
+.filter-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+.filter-tabs::-webkit-scrollbar{display:none}
+.filter-tab{flex-shrink:0;padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;color:var(--text-dim);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-tab.active{border-color:var(--primary);color:var(--primary);background:var(--primary-dim)}
+.wishlist-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wish-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s;position:relative}
+.wish-card.affordable{border-color:var(--primary);box-shadow:0 0 14px var(--primary-dim)}
+.wish-img-wrap{width:100%;aspect-ratio:1;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:42px;overflow:hidden}
+.wish-img-wrap img{width:100%;height:100%;object-fit:cover}
+.wish-info{padding:10px}
+.wish-name{font-size:12px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wish-price{font-family:var(--pixel);font-size:9px;color:var(--warn);margin-bottom:8px}
+.wish-badge{position:absolute;top:7px;right:7px;font-size:9px;font-weight:700;padding:3px 7px;border-radius:4px}
+.wish-badge.can{background:var(--primary);color:var(--bg)}
+.wish-badge.cant{background:rgba(0,0,0,.6);color:var(--text-dim);border:1px solid var(--border)}
+.wish-actions{display:flex;gap:6px}
+.settings-list{}
+.settings-item{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;gap:12px;transition:all .2s}
+.settings-item:last-child{border-bottom:none}
+.settings-item:active{opacity:.7}
+.settings-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0}
+.settings-label{flex:1;font-size:14px;font-weight:700}
+.settings-arrow{color:var(--text-dim);font-size:14px}
+.toast-container{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--bg2);border-radius:8px;padding:10px 18px;font-family:var(--pixel);font-size:9px;animation:toastIn .3s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5);max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+.toast.pos{border:1px solid var(--primary);color:var(--primary)}
+.toast.neg{border:1px solid var(--danger);color:var(--danger)}
+.toast.info{border:1px solid var(--blue);color:var(--blue)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px) scale(.9)}to{opacity:1;transform:none}}
+.empty-state{text-align:center;padding:36px 20px;color:var(--text-dim)}
+.empty-state .e-icon{font-size:38px;margin-bottom:10px}
+.empty-state .e-text{font-size:12px;line-height:1.7}
+.img-upload{width:100%;aspect-ratio:16/9;background:var(--bg3);border:2px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;transition:border-color .2s}
+.img-upload:active{border-color:var(--primary)}
+.img-upload img{width:100%;height:100%;object-fit:cover}
+.img-upload-hint{font-size:11px;color:var(--text-dim);margin-top:6px}
+.load-more{text-align:center;padding:14px;color:var(--text-dim);font-size:12px;cursor:pointer}
+.invest-type-row{display:flex;gap:8px;margin-bottom:14px}
+.invest-type-btn{flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;font-family:var(--sans)}
+.invest-type-btn.profit.active{border-color:var(--primary);color:var(--primary);background:var(--primary-dim)}
+.invest-type-btn.loss.active{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+.confirm-modal-body{text-align:center;padding:10px 0 20px}
+.confirm-icon{font-size:44px;margin-bottom:12px}
+.confirm-text{font-size:14px;line-height:1.7;color:var(--text-dim)}
+.confirm-highlight{color:var(--text);font-weight:700}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
-
 <div class="toast-container" id="toastContainer"></div>
-
-<!-- HEADER -->
 <div class="header">
   <div class="header-title">⚔ LIFE RPG</div>
   <div class="header-right">
@@ -609,84 +182,39 @@
     <div class="header-amount" id="headerBalance">¥ ---</div>
   </div>
 </div>
-
-<!-- PAGES -->
-
-<!-- ===== 主页 ===== -->
 <div class="page active" id="page-home">
-
   <div class="stats-grid">
-    <div class="stat-card green" onclick="openLedger('income')">
-      <div class="stat-label">💰 总收益</div>
-      <div class="stat-value green" id="statIncome">¥0</div>
-    </div>
-    <div class="stat-card red" onclick="openLedger('expense')">
-      <div class="stat-label">💸 总损耗</div>
-      <div class="stat-value red" id="statExpense">¥0</div>
-    </div>
-    <div class="stat-card blue" onclick="openLedger('consume')">
-      <div class="stat-label">🛒 实际消费</div>
-      <div class="stat-value blue" id="statConsume">¥0</div>
-    </div>
-    <div class="stat-card warn" onclick="openLedger('all')">
-      <div class="stat-label">⚖ 净资产</div>
-      <div class="stat-value warn" id="statNet">¥0</div>
-    </div>
+    <div class="stat-card green" onclick="openLedger('income')"><div class="stat-label">💰 总收益</div><div class="stat-value green" id="statIncome">¥0</div></div>
+    <div class="stat-card red" onclick="openLedger('expense')"><div class="stat-label">💸 总损耗</div><div class="stat-value red" id="statExpense">¥0</div></div>
+    <div class="stat-card blue" onclick="openLedger('consume')"><div class="stat-label">🛒 实际消费</div><div class="stat-value blue" id="statConsume">¥0</div></div>
+    <div class="stat-card warn" onclick="openLedger('all')"><div class="stat-label">⚖ 净资产</div><div class="stat-value warn" id="statNet">¥0</div></div>
   </div>
-
-  <!-- 体重进度 -->
   <div class="card">
     <div class="card-title">⚖ 体重目标进度</div>
     <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
       <span>当前 <span id="curWeightDisplay" style="color:var(--warn);font-weight:700">--</span> 斤</span>
       <span>目标 <span style="color:var(--primary);font-weight:700">140 斤</span></span>
     </div>
-    <div class="progress-wrap">
-      <div class="progress-bar green" id="weightProgress" style="width:0%"></div>
-    </div>
+    <div class="progress-wrap"><div class="progress-bar green" id="weightProgress" style="width:0%"></div></div>
     <div style="font-size:10px;color:var(--text-dim);margin-top:8px;" id="weightProgressText">--</div>
   </div>
-
-  <!-- 今日流水 -->
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div class="card-title" style="margin-bottom:0">📋 今日流水</div>
       <div style="font-size:12px;color:var(--blue);cursor:pointer;" onclick="openLedger('all')">查看全部 →</div>
     </div>
-    <div id="todayRecords">
-      <div class="empty-state"><div class="e-icon">🎮</div><div class="e-text">今天还没有记录<br>去记一笔吧！</div></div>
-    </div>
+    <div id="todayRecords"><div class="empty-state"><div class="e-icon">🎮</div><div class="e-text">今天还没有记录</div></div></div>
   </div>
-
-  <!-- 设置入口 -->
   <div class="card">
     <div class="card-title">⚙ 设置 & 工具</div>
     <div class="settings-list">
-      <div class="settings-item" onclick="openWeightModal()">
-        <div class="settings-icon">⚖️</div>
-        <div class="settings-label">更新体重</div>
-        <div class="settings-arrow">›</div>
-      </div>
-      <div class="settings-item" onclick="openBodyFatModal()">
-        <div class="settings-icon">🩺</div>
-        <div class="settings-label">更新体脂率</div>
-        <div class="settings-arrow">›</div>
-      </div>
-      <div class="settings-item" onclick="openInvestModal()">
-        <div class="settings-icon">📈</div>
-        <div class="settings-label">录入上月理财</div>
-        <div class="settings-arrow">›</div>
-      </div>
-      <div class="settings-item" onclick="exportData()">
-        <div class="settings-icon">💾</div>
-        <div class="settings-label">导出数据备份</div>
-        <div class="settings-arrow">›</div>
-      </div>
+      <div class="settings-item" onclick="openWeightModal()"><div class="settings-icon">⚖️</div><div class="settings-label">更新体重</div><div class="settings-arrow">›</div></div>
+      <div class="settings-item" onclick="openBodyFatModal()"><div class="settings-icon">🩺</div><div class="settings-label">更新体脂率</div><div class="settings-arrow">›</div></div>
+      <div class="settings-item" onclick="openInvestModal()"><div class="settings-icon">📈</div><div class="settings-label">录入上月理财</div><div class="settings-arrow">›</div></div>
+      <div class="settings-item" onclick="exportData()"><div class="settings-icon">💾</div><div class="settings-label">导出数据备份</div><div class="settings-arrow">›</div></div>
     </div>
   </div>
 </div>
-
-<!-- ===== 收益页 ===== -->
 <div class="page" id="page-income">
   <div class="group-section">
     <div class="group-header"><span class="group-label">📚 学习</span><div class="group-line"></div></div>
@@ -705,8 +233,6 @@
     <div class="action-grid" id="incomeInvestGrid"></div>
   </div>
 </div>
-
-<!-- ===== 损耗页 ===== -->
 <div class="page" id="page-expense">
   <div class="group-section">
     <div class="group-header"><span class="group-label">🚑 健康</span><div class="group-line"></div></div>
@@ -717,8 +243,6 @@
     <div class="action-grid" id="expensePhoneGrid"></div>
   </div>
 </div>
-
-<!-- ===== 橱柜页 ===== -->
 <div class="page" id="page-shop">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <div style="font-family:var(--pixel);font-size:8px;color:var(--blue);">🛒 愿望橱柜</div>
@@ -726,8 +250,6 @@
   </div>
   <div class="wishlist-grid" id="wishlistGrid"></div>
 </div>
-
-<!-- ===== 账本页（overlay） ===== -->
 <div class="modal-overlay hidden" id="ledgerOverlay">
   <div class="modal" style="border-radius:20px 20px 0 0;max-height:92vh;">
     <div class="modal-drag"></div>
@@ -745,46 +267,25 @@
     <div class="load-more" id="loadMoreBtn" onclick="loadMoreRecords()" style="display:none">加载更多 ↓</div>
   </div>
 </div>
-
-<!-- NAV -->
 <nav class="nav">
-  <button class="nav-item active" onclick="switchPage('home',this)">
-    <span class="nav-icon">🏠</span><span>主页</span>
-  </button>
-  <button class="nav-item" onclick="switchPage('income',this)">
-    <span class="nav-icon">💰</span><span>收益</span>
-  </button>
-  <div class="nav-center">
-    <button class="nav-plus" onclick="openModal('consumeModal')" title="记录消费">＋</button>
-  </div>
-  <button class="nav-item" onclick="switchPage('expense',this)">
-    <span class="nav-icon">💸</span><span>损耗</span>
-  </button>
-  <button class="nav-item" onclick="switchPage('shop',this)">
-    <span class="nav-icon">🛒</span><span>橱柜</span>
-  </button>
+  <button class="nav-item active" onclick="switchPage('home',this)"><span class="nav-icon">🏠</span><span>主页</span></button>
+  <button class="nav-item" onclick="switchPage('income',this)"><span class="nav-icon">💰</span><span>收益</span></button>
+  <div class="nav-center"><button class="nav-plus" onclick="openModal('consumeModal')">＋</button></div>
+  <button class="nav-item" onclick="switchPage('expense',this)"><span class="nav-icon">💸</span><span>损耗</span></button>
+  <button class="nav-item" onclick="switchPage('shop',this)"><span class="nav-icon">🛒</span><span>橱柜</span></button>
 </nav>
-
-<!-- ==================== MODALS ==================== -->
-
-<!-- 通用行为弹窗 -->
 <div class="modal-overlay hidden" id="actionModal">
   <div class="modal" id="actionModalInner">
     <div class="modal-drag"></div>
     <div class="modal-title" id="actionModalTitle">记录行为</div>
     <div id="actionModalBody"></div>
-    <div class="amount-preview">
-      <div class="preview-label">预计金额</div>
-      <div class="preview-value pos" id="actionPreview">¥ 0</div>
-    </div>
+    <div class="amount-preview"><div class="preview-label">预计金额</div><div class="preview-value pos" id="actionPreview">¥ 0</div></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('actionModal')">取消</button>
       <button class="btn btn-primary" onclick="confirmAction()">✅ 确认记录</button>
     </div>
   </div>
 </div>
-
-<!-- 子选择弹窗（有趣/无趣） -->
 <div class="modal-overlay hidden" id="subSelectModal">
   <div class="modal">
     <div class="modal-drag"></div>
@@ -792,14 +293,11 @@
     <div class="sub-select-grid" id="subSelectGrid"></div>
   </div>
 </div>
-
-<!-- 消费弹窗 -->
 <div class="modal-overlay hidden" id="consumeModal">
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">🛍️ 记录消费</div>
-    <div class="form-group">
-      <label class="form-label">消费类别</label>
+    <div class="form-group"><label class="form-label">消费类别</label>
       <select class="form-select" id="consumeCat">
         <option value="餐饮">🍜 餐饮</option>
         <option value="购物">🛍️ 购物</option>
@@ -809,32 +307,20 @@
         <option value="其他">📦 其他</option>
       </select>
     </div>
-    <div class="form-group">
-      <label class="form-label">金额（元）</label>
-      <input type="number" class="form-input" id="consumeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">备注（可选）</label>
-      <input type="text" class="form-input" id="consumeNote" placeholder="例：午饭、打车" />
-    </div>
+    <div class="form-group"><label class="form-label">金额（元）</label><input type="number" class="form-input" id="consumeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+    <div class="form-group"><label class="form-label">备注（可选）</label><input type="text" class="form-input" id="consumeNote" placeholder="例：午饭、打车"/></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('consumeModal')">取消</button>
       <button class="btn btn-primary" onclick="confirmConsume()">✅ 确认</button>
     </div>
   </div>
 </div>
-
-<!-- 证书弹窗 -->
 <div class="modal-overlay hidden" id="certModal">
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">🏆 获得证书奖励</div>
-    <div class="form-group">
-      <label class="form-label">证书名称</label>
-      <input type="text" class="form-input" id="certName" placeholder="例：CPA、驾照、英语六级" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">含金量等级</label>
+    <div class="form-group"><label class="form-label">证书名称</label><input type="text" class="form-input" id="certName" placeholder="例：CPA、驾照、英语六级"/></div>
+    <div class="form-group"><label class="form-label">含金量等级</label>
       <div class="cert-grid">
         <div class="cert-btn" onclick="selectCert(1000,this)">⭐ 初级<div class="cert-val">+¥1000</div></div>
         <div class="cert-btn" onclick="selectCert(2000,this)">⭐⭐ 中级<div class="cert-val">+¥2000</div></div>
@@ -844,113 +330,75 @@
         <div class="cert-btn" onclick="selectCert(10000,this)">👑 传说<div class="cert-val">+¥10000</div></div>
       </div>
     </div>
-    <div class="amount-preview">
-      <div class="preview-label">奖励金额</div>
-      <div class="preview-value pos" id="certPreview">请选择等级</div>
-    </div>
+    <div class="amount-preview"><div class="preview-label">奖励金额</div><div class="preview-value pos" id="certPreview">请选择等级</div></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('certModal')">取消</button>
       <button class="btn btn-primary" onclick="confirmCert()">🏆 领取奖励</button>
     </div>
   </div>
 </div>
-
-<!-- 理财弹窗 -->
 <div class="modal-overlay hidden" id="investModal">
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">📈 上月理财结算</div>
-    <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.7;" id="investDesc">请输入上月理财盈亏，计入游戏账本 50%</div>
-    <div class="form-group">
-      <label class="form-label">盈亏类型</label>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.7;" id="investDesc">请输入上月理财盈亏，计入游戏账本50%</div>
+    <div class="form-group"><label class="form-label">盈亏类型</label>
       <div class="invest-type-row">
         <div class="invest-type-btn profit active" id="investBtnProfit" onclick="setInvestType('profit',this)">📈 盈利</div>
         <div class="invest-type-btn loss" id="investBtnLoss" onclick="setInvestType('loss',this)">📉 亏损</div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">实际金额（元）</label>
-      <input type="number" class="form-input" id="investAmount" placeholder="请输入实际金额" min="0" step="0.01" inputmode="decimal" oninput="updateInvestPreview()" />
-    </div>
-    <div class="amount-preview">
-      <div class="preview-label">计入游戏余额（×50%）</div>
-      <div class="preview-value pos" id="investPreview">¥ 0</div>
-    </div>
+    <div class="form-group"><label class="form-label">实际金额（元）</label><input type="number" class="form-input" id="investAmount" placeholder="请输入实际金额" min="0" step="0.01" inputmode="decimal" oninput="updateInvestPreview()"/></div>
+    <div class="amount-preview"><div class="preview-label">计入游戏余额（×50%）</div><div class="preview-value pos" id="investPreview">¥ 0</div></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('investModal')">稍后</button>
       <button class="btn btn-primary" onclick="confirmInvest()">✅ 确认结算</button>
     </div>
   </div>
 </div>
-
-<!-- 体重弹窗 -->
 <div class="modal-overlay hidden" id="weightModal">
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">⚖️ 更新体重</div>
-    <div class="form-group">
-      <label class="form-label">当前体重（斤）</label>
-      <input type="number" class="form-input" id="newWeight" placeholder="例：148.5" step="0.1" inputmode="decimal" />
-    </div>
+    <div class="form-group"><label class="form-label">当前体重（斤）</label><input type="number" class="form-input" id="newWeight" placeholder="例：148.5" step="0.1" inputmode="decimal"/></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('weightModal')">取消</button>
       <button class="btn btn-primary" onclick="confirmWeight()">💾 保存</button>
     </div>
   </div>
 </div>
-
-<!-- 体脂弹窗 -->
 <div class="modal-overlay hidden" id="bodyFatModal">
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">🩺 更新体脂率</div>
-    <div id="bodyFatLockTip" style="display:none;background:var(--warn-dim);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--warn);">
-      ⚠️ 体脂功能需体重达到 140 斤后解锁
-    </div>
-    <div class="form-group">
-      <label class="form-label">当前体脂率（%）</label>
-      <input type="number" class="form-input" id="newBodyFat" placeholder="例：18.5" step="0.1" inputmode="decimal" />
-    </div>
+    <div id="bodyFatLockTip" style="display:none;background:var(--warn-dim);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--warn);">⚠️ 体脂功能需体重达到140斤后解锁</div>
+    <div class="form-group"><label class="form-label">当前体脂率（%）</label><input type="number" class="form-input" id="newBodyFat" placeholder="例：18.5" step="0.1" inputmode="decimal"/></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('bodyFatModal')">取消</button>
       <button class="btn btn-primary" onclick="confirmBodyFat()">💾 保存</button>
     </div>
   </div>
 </div>
-
-<!-- 橱柜添加弹窗 -->
 <div class="modal-overlay hidden" id="wishModal">
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">🛍️ 添加愿望商品</div>
-    <div class="form-group">
-      <label class="form-label">商品名称</label>
-      <input type="text" class="form-input" id="wishName" placeholder="例：AirPods Pro" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">价格（元）</label>
-      <input type="number" class="form-input" id="wishPrice" placeholder="0.00" min="0" step="0.01" inputmode="decimal" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">商品图片（可选）</label>
+    <div class="form-group"><label class="form-label">商品名称</label><input type="text" class="form-input" id="wishName" placeholder="例：AirPods Pro"/></div>
+    <div class="form-group"><label class="form-label">价格（元）</label><input type="number" class="form-input" id="wishPrice" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+    <div class="form-group"><label class="form-label">商品图片（可选）</label>
       <div class="img-upload" id="wishImgUpload" onclick="document.getElementById('wishImgInput').click()">
-        <input type="file" id="wishImgInput" accept="image/*" style="display:none" onchange="previewWishImg(event)" />
+        <input type="file" id="wishImgInput" accept="image/*" style="display:none" onchange="previewWishImg(event)"/>
         <span style="font-size:28px">📷</span>
         <span class="img-upload-hint">点击上传图片</span>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">备注（可选）</label>
-      <input type="text" class="form-input" id="wishNote" placeholder="为什么想买它？" />
-    </div>
+    <div class="form-group"><label class="form-label">备注（可选）</label><input type="text" class="form-input" id="wishNote" placeholder="为什么想买它？"/></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('wishModal')">取消</button>
       <button class="btn btn-primary" onclick="confirmWish()">✅ 加入橱柜</button>
     </div>
   </div>
 </div>
-
-<!-- 购买确认弹窗 -->
 <div class="modal-overlay hidden" id="buyModal">
   <div class="modal">
     <div class="modal-drag"></div>
@@ -962,8 +410,6 @@
     </div>
   </div>
 </div>
-
-<!-- 删除确认弹窗 -->
 <div class="modal-overlay center hidden" id="deleteModal">
   <div class="modal center-modal danger">
     <div class="modal-title">⚠️ 确认删除</div>
@@ -977,7 +423,6 @@
     </div>
   </div>
 </div>
-
 <script>
 const SUPABASE_URL = 'https://rybcrsdzmoimzlojccmp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_hOlXRF_JQYJjo0X2ikNnzw_bTPydIrr';
@@ -988,192 +433,142 @@ const BASE_WEIGHT = 152;
 const TARGET_WEIGHT = 140;
 const TARGET_BODY_FAT = 12;
 
-// ===== 行为配置 =====
 const INCOME_LEARN = [
-  {
-    id: 'english', icon: '🇬🇧', label: '学英语', amountDesc: '¥1/分钟',
-    fields: [{ key: 'minutes', label: '学习时长（分钟）', type: 'number', placeholder: '30', inputmode: 'numeric' }],
-    calc: v => v.minutes * 1,
-    noteGen: v => `学英语 ${v.minutes} 分钟`,
-    unitValue: v => v.minutes, unitLabel: '分钟'
-  },
-  {
-    id: 'book', icon: '📚', label: '看书', amountDesc: '点击选择',
-    special: 'book'
-  },
-  {
-    id: 'study_cert', icon: '📝', label: '考证学习', amountDesc: '¥1/分钟',
-    fields: [
-      { key: 'subject', label: '科目', type: 'text', placeholder: '科目名称' },
-      { key: 'minutes', label: '时长（分钟）', type: 'number', placeholder: '60', inputmode: 'numeric' }
-    ],
-    calc: v => v.minutes * 1,
-    noteGen: v => `考证学习-${v.subject} ${v.minutes}分钟`,
-    unitValue: v => v.minutes, unitLabel: '分钟'
-  },
-  {
-    id: 'cert_get', icon: '🏆', label: '获得证书', amountDesc: '¥1k~10k',
-    special: 'cert'
-  },
+  { id:'english', icon:'🇬🇧', label:'学英语', amountDesc:'¥1/分钟',
+    fields:[{key:'minutes',label:'学习时长（分钟）',type:'number',placeholder:'30'}],
+    calc:function(v){return v.minutes*1},
+    noteGen:function(v){return '学英语 '+v.minutes+' 分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟' },
+  { id:'book', icon:'📚', label:'看书', amountDesc:'点击选择', special:'book' },
+  { id:'study_cert', icon:'📝', label:'考证学习', amountDesc:'¥1/分钟',
+    fields:[{key:'subject',label:'科目',type:'text',placeholder:'科目名称'},{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'60'}],
+    calc:function(v){return v.minutes*1},
+    noteGen:function(v){return '考证学习-'+v.subject+' '+v.minutes+'分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟' },
+  { id:'cert_get', icon:'🏆', label:'获得证书', amountDesc:'¥1k~10k', special:'cert' },
 ];
 
 const INCOME_HEALTH = [
-  {
-    id: 'supplement', icon: '💊', label: '吃保健品', amountDesc: '¥3/次',
-    fields: [],
-    calc: () => 3,
-    noteGen: () => '服用保健品',
-    unitValue: () => 1, unitLabel: '次'
-  },
-  {
-    id: 'brush_teeth', icon: '🦷', label: '刷牙', amountDesc: '¥3/次',
-    fields: [],
-    calc: () => 3,
-    noteGen: () => '晚上刷牙',
-    unitValue: () => 1, unitLabel: '次'
-  },
-  {
-    id: 'sleep_early', icon: '😴', label: '早睡奖励', amountDesc: '最高¥50',
-    fields: [
-      { key: 'hour', label: '入睡小时（24小时制）', type: 'number', placeholder: '23', min: 20, max: 23, inputmode: 'numeric' },
-      { key: 'minute', label: '入睡分钟', type: 'number', placeholder: '0', min: 0, max: 59, inputmode: 'numeric' }
+  { id:'supplement', icon:'💊', label:'吃保健品', amountDesc:'¥3/次',
+    fields:[],
+    calc:function(){return 3},
+    noteGen:function(){return '服用保健品'},
+    unitValue:function(){return 1}, unitLabel:'次' },
+  { id:'brush_teeth', icon:'🦷', label:'刷牙', amountDesc:'¥3/次',
+    fields:[],
+    calc:function(){return 3},
+    noteGen:function(){return '晚上刷牙'},
+    unitValue:function(){return 1}, unitLabel:'次' },
+  { id:'sleep_early', icon:'😴', label:'早睡奖励', amountDesc:'最高¥50',
+    fields:[
+      {key:'hour',label:'入睡小时（24小时制）',type:'number',placeholder:'23'},
+      {key:'minute',label:'入睡分钟',type:'number',placeholder:'0'}
     ],
-    calc: v => {
-      const h = parseInt(v.hour), m = parseInt(v.minute);
-      if (h < 23) return 50;
-      if (h === 23 && m < 30) return 30;
+    calc:function(v){
+      var h=parseInt(v.hour), m=parseInt(v.minute);
+      if(h<23) return 50;
+      if(h===23&&m<30) return 30;
       return 10;
     },
-    noteGen: v => `${v.hour}:${String(v.minute).padStart(2,'0')} 早睡`,
-    unitValue: () => 1, unitLabel: '次',
-    condition: null
-  },
-  {
-    id: 'weight_maintain', icon: '🎯', label: '体重维持', amountDesc: '¥50/周',
-    fields: [],
-    calc: () => 50,
-    noteGen: () => '体重维持140斤满一周',
-    unitValue: () => 1, unitLabel: '周',
-    condition: 'weightReached'
-  },
-  {
-    id: 'bodyfat_reduce', icon: '🔥', label: '体脂下降', amountDesc: '¥500/1%',
-    special: 'bodyfat_reduce',
-    condition: 'weightReached'
-  },
-  {
-    id: 'bodyfat_maintain', icon: '💪', label: '体脂维持', amountDesc: '¥300/月',
-    fields: [],
-    calc: () => 300,
-    noteGen: () => '体脂率维持12%满一月',
-    unitValue: () => 1, unitLabel: '月',
-    condition: 'bodyfatReached'
-  },
+    noteGen:function(v){return v.hour+':'+String(v.minute).padStart(2,'0')+' 早睡'},
+    unitValue:function(){return 1}, unitLabel:'次' },
+  { id:'weight_maintain', icon:'🎯', label:'体重维持', amountDesc:'¥50/周',
+    fields:[],
+    calc:function(){return 50},
+    noteGen:function(){return '体重维持140斤满一周'},
+    unitValue:function(){return 1}, unitLabel:'周', condition:'weightReached' },
+  { id:'bodyfat_reduce', icon:'🔥', label:'体脂下降', amountDesc:'¥500/1%',
+    special:'bodyfat_reduce', condition:'weightReached' },
+  { id:'bodyfat_maintain', icon:'💪', label:'体脂维持', amountDesc:'¥300/月',
+    fields:[],
+    calc:function(){return 300},
+    noteGen:function(){return '体脂率维持12%满一月'},
+    unitValue:function(){return 1}, unitLabel:'月', condition:'bodyfatReached' },
 ];
 
 const INCOME_SPORT = [
-  {
-    id: 'steps', icon: '👟', label: '步行', amountDesc: '¥5/千步',
-    fields: [{ key: 'steps', label: '今日步数', type: 'number', placeholder: '8000', inputmode: 'numeric' }],
-    calc: v => Math.floor(v.steps / 1000) * 5,
-    noteGen: v => `步行 ${v.steps} 步`,
-    unitValue: v => v.steps, unitLabel: '步'
-  },
-  {
-    id: 'sport', icon: '🏃', label: '运动', amountDesc: '点击选择',
-    special: 'sport'
-  },
+  { id:'steps', icon:'👟', label:'步行', amountDesc:'¥5/千步',
+    fields:[{key:'steps',label:'今日步数',type:'number',placeholder:'8000'}],
+    calc:function(v){return Math.floor(v.steps/1000)*5},
+    noteGen:function(v){return '步行 '+v.steps+' 步'},
+    unitValue:function(v){return v.steps}, unitLabel:'步' },
+  { id:'sport', icon:'🏃', label:'运动', amountDesc:'点击选择', special:'sport' },
 ];
 
 const INCOME_INVEST = [
-  {
-    id: 'invest', icon: '📈', label: '上月理财', amountDesc: '实际×50%',
-    special: 'invest'
-  },
+  { id:'invest', icon:'📈', label:'上月理财', amountDesc:'实际×50%', special:'invest' },
 ];
 
 const EXPENSE_HEALTH = [
-  {
-    id: 'alcohol', icon: '🍺', label: '饮酒', amountDesc: '-¥5/ml',
-    fields: [{ key: 'ml', label: '摄入酒精量（毫升）', type: 'number', placeholder: '10', step: '0.1', inputmode: 'decimal' }],
-    calc: v => -(v.ml * 5),
-    noteGen: v => `饮酒 ${v.ml}ml 酒精`,
-    unitValue: v => v.ml, unitLabel: 'ml'
-  },
-  {
-    id: 'shuke', icon: '✈️', label: '舒克', amountDesc: '-¥300/次',
-    fields: [],
-    calc: () => -300,
-    noteGen: () => '舒克开飞机',
-    unitValue: () => 1, unitLabel: '次'
-  },
-  {
-    id: 'sleep_late', icon: '🌙', label: '晚睡罚款', amountDesc: '最高-¥50',
-    fields: [
-      { key: 'hour', label: '入睡小时（凌晨1点填25）', type: 'number', placeholder: '25', inputmode: 'numeric' },
-      { key: 'minute', label: '入睡分钟', type: 'number', placeholder: '0', min: 0, max: 59, inputmode: 'numeric' }
+  { id:'alcohol', icon:'🍺', label:'饮酒', amountDesc:'-¥5/ml',
+    fields:[{key:'ml',label:'摄入酒精量（毫升）',type:'number',placeholder:'10'}],
+    calc:function(v){return -(v.ml*5)},
+    noteGen:function(v){return '饮酒 '+v.ml+'ml 酒精'},
+    unitValue:function(v){return v.ml}, unitLabel:'ml' },
+  { id:'shuke', icon:'✈️', label:'舒克', amountDesc:'-¥300/次',
+    fields:[],
+    calc:function(){return -300},
+    noteGen:function(){return '舒克开飞机'},
+    unitValue:function(){return 1}, unitLabel:'次' },
+  { id:'sleep_late', icon:'🌙', label:'晚睡罚款', amountDesc:'最高-¥50',
+    fields:[
+      {key:'hour',label:'入睡小时（凌晨1点填25）',type:'number',placeholder:'25'},
+      {key:'minute',label:'入睡分钟',type:'number',placeholder:'0'}
     ],
-    calc: v => {
-      const h = parseInt(v.hour), m = parseInt(v.minute);
-      if (h >= 25) return -50;
-      if (h === 24 && m >= 30) return -30;
+    calc:function(v){
+      var h=parseInt(v.hour), m=parseInt(v.minute);
+      if(h>=25) return -50;
+      if(h===24&&m>=30) return -30;
       return -10;
     },
-    noteGen: v => {
-      const dh = parseInt(v.hour) >= 24 ? `凌晨${parseInt(v.hour)-24}点` : `${v.hour}点`;
-      return `${dh}${v.minute}分入睡（晚睡罚款）`;
+    noteGen:function(v){
+      var dh=parseInt(v.hour)>=24?'凌晨'+(parseInt(v.hour)-24)+'点':v.hour+'点';
+      return dh+v.minute+'分入睡（晚睡罚款）';
     },
-    unitValue: () => 1, unitLabel: '次'
-  },
+    unitValue:function(){return 1}, unitLabel:'次' },
 ];
 
 const EXPENSE_PHONE = [
-  {
-    id: 'phone_game', icon: '🎮', label: '游戏', amountDesc: '-¥2/分钟',
-    fields: [{ key: 'minutes', label: '时长（分钟）', type: 'number', placeholder: '30', inputmode: 'numeric' }],
-    calc: v => -(v.minutes * 2),
-    noteGen: v => `玩手机游戏 ${v.minutes} 分钟`,
-    unitValue: v => v.minutes, unitLabel: '分钟'
-  },
-  {
-    id: 'phone_video', icon: '📺', label: '视频', amountDesc: '-¥1/分钟',
-    fields: [{ key: 'minutes', label: '时长（分钟）', type: 'number', placeholder: '30', inputmode: 'numeric' }],
-    calc: v => -(v.minutes * 1),
-    noteGen: v => `刷视频 ${v.minutes} 分钟`,
-    unitValue: v => v.minutes, unitLabel: '分钟'
-  },
-  {
-    id: 'phone_social', icon: '📱', label: '社交媒体', amountDesc: '-¥0.5/分钟',
-    fields: [{ key: 'minutes', label: '时长（分钟）', type: 'number', placeholder: '30', inputmode: 'numeric' }],
-    calc: v => -(v.minutes * 0.5),
-    noteGen: v => `刷社交媒体 ${v.minutes} 分钟`,
-    unitValue: v => v.minutes, unitLabel: '分钟'
-  },
-  {
-    id: 'phone_other', icon: '📲', label: '其他App', amountDesc: '-¥0.3/分钟',
-    fields: [{ key: 'minutes', label: '时长（分钟）', type: 'number', placeholder: '30', inputmode: 'numeric' }],
-    calc: v => -(v.minutes * 0.3),
-    noteGen: v => `刷手机(其他) ${v.minutes} 分钟`,
-    unitValue: v => v.minutes, unitLabel: '分钟'
-  },
+  { id:'phone_game', icon:'🎮', label:'游戏', amountDesc:'-¥2/分钟',
+    fields:[{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'30'}],
+    calc:function(v){return -(v.minutes*2)},
+    noteGen:function(v){return '玩手机游戏 '+v.minutes+' 分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟' },
+  { id:'phone_video', icon:'📺', label:'视频', amountDesc:'-¥1/分钟',
+    fields:[{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'30'}],
+    calc:function(v){return -(v.minutes*1)},
+    noteGen:function(v){return '刷视频 '+v.minutes+' 分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟' },
+  { id:'phone_social', icon:'📱', label:'社交媒体', amountDesc:'-¥0.5/分钟',
+    fields:[{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'30'}],
+    calc:function(v){return -(v.minutes*0.5)},
+    noteGen:function(v){return '刷社交媒体 '+v.minutes+' 分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟' },
+  { id:'phone_other', icon:'📲', label:'其他App', amountDesc:'-¥0.3/分钟',
+    fields:[{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'30'}],
+    calc:function(v){return -(v.minutes*0.3)},
+    noteGen:function(v){return '刷手机(其他) '+v.minutes+' 分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟' },
 ];
 
-// ===== 全局状态 =====
-let currentAction = null;
-let certAmountSelected = 0;
-let investType = 'profit';
-let ledgerFilter = 'all';
-let ledgerOffset = 0;
-const LEDGER_PAGE = 20;
-let currentBalance = 0;
-let currentWeight = BASE_WEIGHT;
-let currentBodyFat = null;
-let wishImgBase64 = null;
-let buyingWishId = null;
-let deletingRecordId = null;
-let deletingRecordDesc = '';
+var currentAction = null;
+var certAmountSelected = 0;
+var investType = 'profit';
+var ledgerFilter = 'all';
+var ledgerOffset = 0;
+var LEDGER_PAGE = 20;
+var currentBalance = 0;
+var currentWeight = BASE_WEIGHT;
+var currentBodyFat = null;
+var wishImgBase64 = null;
+var buyingWishId = null;
+var deletingRecordId = null;
 
-// ===== INIT =====
+async function saveRecord(data) {
+  var result = await db.from('records').insert(data);
+  if (result.error) { showToast('保存失败：' + result.error.message, 'info'); throw result.error; }
+}
+
 async function init() {
   await loadCurrentStats();
   renderIncomeButtons();
@@ -1183,64 +578,58 @@ async function init() {
   checkMonthlyInvest();
 }
 
-// ===== 加载统计 =====
 async function loadCurrentStats() {
-  const { data: wData } = await db.from('weight_records').select('weight').order('created_at', { ascending: false }).limit(1);
-  if (wData && wData.length > 0) currentWeight = wData[0].weight;
+  var wRes = await db.from('weight_records').select('weight').order('created_at',{ascending:false}).limit(1);
+  if (wRes.data && wRes.data.length > 0) currentWeight = wRes.data[0].weight;
 
-  const { data: bfData } = await db.from('body_fat_records').select('body_fat').order('created_at', { ascending: false }).limit(1);
-  if (bfData && bfData.length > 0) currentBodyFat = bfData[0].body_fat;
+  var bfRes = await db.from('body_fat_records').select('body_fat').order('created_at',{ascending:false}).limit(1);
+  if (bfRes.data && bfRes.data.length > 0) currentBodyFat = bfRes.data[0].body_fat;
 
-  const { data: records } = await db.from('records').select('type, amount');
-  let income = 0, expense = 0, consume = 0;
-  (records || []).forEach(r => {
-    if (r.type === 'income') income += r.amount;
-    else if (r.type === 'expense') expense += Math.abs(r.amount);
-    else if (r.type === 'consume') consume += Math.abs(r.amount);
+  var rRes = await db.from('records').select('type,amount');
+  var income=0, expense=0, consume=0;
+  (rRes.data||[]).forEach(function(r){
+    if(r.type==='income') income+=r.amount;
+    else if(r.type==='expense') expense+=Math.abs(r.amount);
+    else if(r.type==='consume') consume+=Math.abs(r.amount);
   });
-  const net = income - expense - consume;
+  var net = income - expense - consume;
   currentBalance = net;
 
-  document.getElementById('statIncome').textContent = `¥${income.toFixed(0)}`;
-  document.getElementById('statExpense').textContent = `¥${expense.toFixed(0)}`;
-  document.getElementById('statConsume').textContent = `¥${consume.toFixed(0)}`;
-  document.getElementById('statNet').textContent = `¥${net.toFixed(0)}`;
+  document.getElementById('statIncome').textContent = '¥'+income.toFixed(0);
+  document.getElementById('statExpense').textContent = '¥'+expense.toFixed(0);
+  document.getElementById('statConsume').textContent = '¥'+consume.toFixed(0);
+  document.getElementById('statNet').textContent = '¥'+net.toFixed(0);
 
-  const hb = document.getElementById('headerBalance');
-  hb.textContent = `¥ ${net.toFixed(0)}`;
-  hb.className = `header-amount${net < 0 ? ' neg' : ''}`;
+  var hb = document.getElementById('headerBalance');
+  hb.textContent = '¥ '+net.toFixed(0);
+  hb.className = 'header-amount'+(net<0?' neg':'');
 
-  // 体重进度
   document.getElementById('curWeightDisplay').textContent = currentWeight;
-  const totalNeed = BASE_WEIGHT - TARGET_WEIGHT;
-  const lost = Math.max(0, BASE_WEIGHT - currentWeight);
-  const pct = Math.min(100, (lost / totalNeed) * 100);
-  document.getElementById('weightProgress').style.width = pct + '%';
-  const remaining = currentWeight - TARGET_WEIGHT;
+  var totalNeed = BASE_WEIGHT - TARGET_WEIGHT;
+  var lost = Math.max(0, BASE_WEIGHT - currentWeight);
+  var pct = Math.min(100, (lost/totalNeed)*100);
+  document.getElementById('weightProgress').style.width = pct+'%';
+  var remaining = currentWeight - TARGET_WEIGHT;
   document.getElementById('weightProgressText').textContent =
-    remaining > 0 ? `距目标还需减 ${remaining.toFixed(1)} 斤` : '🎉 已达目标体重！';
-
-  refreshWishlistAffordable();
+    remaining > 0 ? '距目标还需减 '+remaining.toFixed(1)+' 斤' : '🎉 已达目标体重！';
 }
 
-// ===== 渲染收益按钮 =====
 function renderIncomeButtons() {
-  const weightReached = currentWeight <= TARGET_WEIGHT;
-  const bodyfatReached = weightReached && currentBodyFat !== null && currentBodyFat <= TARGET_BODY_FAT;
+  var weightReached = currentWeight <= TARGET_WEIGHT;
+  var bodyfatReached = weightReached && currentBodyFat !== null && currentBodyFat <= TARGET_BODY_FAT;
 
   function renderGrid(list, containerId) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = list.map(a => {
-      let locked = false;
+    var container = document.getElementById(containerId);
+    container.innerHTML = list.map(function(a) {
+      var locked = false;
       if (a.condition === 'weightReached' && !weightReached) locked = true;
       if (a.condition === 'bodyfatReached' && !bodyfatReached) locked = true;
-      return `
-        <div class="action-btn income-btn ${locked ? 'locked' : ''}" onclick="${locked ? `showToast('${a.condition === 'weightReached' ? '需体重达到140斤才能解锁' : '需体脂达到12%才能解锁'}','info')` : `handleIncomeClick('${a.id}')`}">
-          <div class="a-icon">${a.icon}</div>
-          <div class="a-label">${a.label}</div>
-          <div class="a-amount pos">${locked ? '🔒 未解锁' : a.amountDesc}</div>
-        </div>
-      `;
+      var lockMsg = a.condition === 'weightReached' ? '需体重达到140斤' : '需体脂达到12%';
+      return '<div class="action-btn income-btn'+(locked?' locked':'')+'" onclick="'+(locked?'showToast(\''+lockMsg+'\',\'info\')':'handleIncomeClick(\''+a.id+'\')')+'">'+
+        '<div class="a-icon">'+a.icon+'</div>'+
+        '<div class="a-label">'+a.label+'</div>'+
+        '<div class="a-amount pos">'+(locked?'🔒 未解锁':a.amountDesc)+'</div>'+
+        '</div>';
     }).join('');
   }
 
@@ -1250,547 +639,508 @@ function renderIncomeButtons() {
   renderGrid(INCOME_INVEST, 'incomeInvestGrid');
 }
 
-// ===== 渲染损耗按钮 =====
 function renderExpenseButtons() {
   function renderGrid(list, containerId) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = list.map(a => `
-      <div class="action-btn expense-btn" onclick="handleExpenseClick('${a.id}')">
-        <div class="a-icon">${a.icon}</div>
-        <div class="a-label">${a.label}</div>
-        <div class="a-amount neg">${a.amountDesc}</div>
-      </div>
-    `).join('');
+    var container = document.getElementById(containerId);
+    container.innerHTML = list.map(function(a) {
+      return '<div class="action-btn expense-btn" onclick="handleExpenseClick(\''+a.id+'\')">'+
+        '<div class="a-icon">'+a.icon+'</div>'+
+        '<div class="a-label">'+a.label+'</div>'+
+        '<div class="a-amount neg">'+a.amountDesc+'</div>'+
+        '</div>';
+    }).join('');
   }
   renderGrid(EXPENSE_HEALTH, 'expenseHealthGrid');
   renderGrid(EXPENSE_PHONE, 'expensePhoneGrid');
 }
 
-// ===== 收益点击处理 =====
 function handleIncomeClick(id) {
-  if (id === 'book') { openBookSubSelect(); return; }
-  if (id === 'sport') { openSportSubSelect(); return; }
-  if (id === 'cert_get') { openModal('certModal'); return; }
-  if (id === 'invest') { openInvestModal(); return; }
-  if (id === 'bodyfat_reduce') { openBodyFatReduceModal(); return; }
-
-  const action = [...INCOME_LEARN, ...INCOME_HEALTH, ...INCOME_SPORT].find(a => a.id === id);
+  if (id==='book') { openBookSubSelect(); return; }
+  if (id==='sport') { openSportSubSelect(); return; }
+  if (id==='cert_get') { openModal('certModal'); return; }
+  if (id==='invest') { openInvestModal(); return; }
+  if (id==='bodyfat_reduce') { openBodyFatReduceModal(); return; }
+  var all = INCOME_LEARN.concat(INCOME_HEALTH).concat(INCOME_SPORT);
+  var action = null;
+  for (var i=0;i<all.length;i++) { if(all[i].id===id){action=all[i];break;} }
   if (action) openActionModal(action, 'income');
 }
 
-// ===== 损耗点击处理 =====
 function handleExpenseClick(id) {
-  const action = [...EXPENSE_HEALTH, ...EXPENSE_PHONE].find(a => a.id === id);
+  var all = EXPENSE_HEALTH.concat(EXPENSE_PHONE);
+  var action = null;
+  for (var i=0;i<all.length;i++) { if(all[i].id===id){action=all[i];break;} }
   if (action) openActionModal(action, 'expense');
 }
 
-// ===== 看书子选择 =====
 function openBookSubSelect() {
   document.getElementById('subSelectTitle').textContent = '📚 选择书籍类型';
-  document.getElementById('subSelectGrid').innerHTML = `
-    <div class="sub-select-btn" onclick="closeModal('subSelectModal');openActionModal({
-      id:'book_boring',icon:'📚',label:'无趣的书',
-      fields:[{key:'title',label:'书名',type:'text',placeholder:'书名'},{key:'words',label:'字数（万字）',type:'number',placeholder:'20',step:'0.1',inputmode:'decimal'}],
-      calc:v=>v.words*20,
-      noteGen:v=>('读完《'+v.title+'》('+v.words+'万字)'),
-      unitValue:v=>v.words,unitLabel:'万字'
-    },'income')">
-      <div class="ss-icon">😴</div>
-      <div class="ss-label">无趣的书</div>
-      <div class="ss-desc">社科、经济类</div>
-      <div class="ss-amount">¥20/万字</div>
-    </div>
-    <div class="sub-select-btn" onclick="closeModal('subSelectModal');openActionModal({
-      id:'book_fun',icon:'📖',label:'有趣的书',
-      fields:[{key:'title',label:'书名',type:'text',placeholder:'书名'},{key:'words',label:'字数（万字）',type:'number',placeholder:'20',step:'0.1',inputmode:'decimal'}],
-      calc:v=>v.words*10,
-      noteGen:v=>('读完《'+v.title+'》('+v.words+'万字)'),
-      unitValue:v=>v.words,unitLabel:'万字'
-    },'income')">
-      <div class="ss-icon">🤩</div>
-      <div class="ss-label">有趣的书</div>
-      <div class="ss-desc">小说、轻松类</div>
-      <div class="ss-amount">¥10/万字</div>
-    </div>
-  `;
+  document.getElementById('subSelectGrid').innerHTML =
+    '<div class="sub-select-btn" onclick="closeModal(\'subSelectModal\');startBook(\'boring\')">'+
+      '<div class="ss-icon">😴</div><div class="ss-label">无趣的书</div>'+
+      '<div class="ss-desc">社科、经济类</div><div class="ss-amount">¥20/万字</div></div>'+
+    '<div class="sub-select-btn" onclick="closeModal(\'subSelectModal\');startBook(\'fun\')">'+
+      '<div class="ss-icon">🤩</div><div class="ss-label">有趣的书</div>'+
+      '<div class="ss-desc">小说、轻松类</div><div class="ss-amount">¥10/万字</div></div>';
   openModal('subSelectModal');
 }
 
-// ===== 运动子选择 =====
-function openSportSubSelect() {
-  document.getElementById('subSelectTitle').textContent = '🏃 选择运动类型';
-  document.getElementById('subSelectGrid').innerHTML = `
-    <div class="sub-select-btn" onclick="closeModal('subSelectModal');openActionModal({
-      id:'sport_boring',icon:'🏃',label:'无趣运动',
-      fields:[{key:'type',label:'运动类型',type:'text',placeholder:'跑步/健身'},{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'30',inputmode:'numeric'}],
-      calc:v=>v.minutes*1,
-      noteGen:v=>(v.type+' '+v.minutes+'分钟'),
-      unitValue:v=>v.minutes,unitLabel:'分钟'
-    },'income')">
-      <div class="ss-icon">💪</div>
-      <div class="ss-label">无趣运动</div>
-      <div class="ss-desc">跑步、健身等</div>
-      <div class="ss-amount">¥1/分钟</div>
-    </div>
-    <div class="sub-select-btn" onclick="closeModal('subSelectModal');openActionModal({
-      id:'sport_fun',icon:'🏸',label:'有趣运动',
-      fields:[{key:'type',label:'运动类型',type:'text',placeholder:'羽毛球/乒乓球'},{key:'minutes',label:'时长（分钟）',type:'number',placeholder:'60',inputmode:'numeric'}],
-      calc:v=>v.minutes*0.5,
-      noteGen:v=>(v.type+' '+v.minutes+'分钟'),
-      unitValue:v=>v.minutes,unitLabel:'分钟'
-    },'income')">
-      <div class="ss-icon">🏸</div>
-      <div class="ss-label">有趣运动</div>
-      <div class="ss-desc">羽毛球、乒乓球等</div>
-      <div class="ss-amount">¥0.5/分钟</div>
-    </div>
-  `;
-  openModal('subSelectModal');
-}
-
-// ===== 体脂减少弹窗 =====
-function openBodyFatReduceModal() {
+function startBook(type) {
+  var rate = type==='boring' ? 20 : 10;
+  var label = type==='boring' ? '无趣的书' : '有趣的书';
   openActionModal({
-    id: 'bodyfat_reduce', icon: '🔥', label: '体脂下降',
-    fields: [
-      { key: 'from', label: '上次体脂率（%）', type: 'number', placeholder: '18.0', step: '0.1', inputmode: 'decimal' },
-      { key: 'to', label: '当前体脂率（%）', type: 'number', placeholder: '17.0', step: '0.1', inputmode: 'decimal' }
+    id:'book_'+type, icon:'📚', label:label,
+    fields:[
+      {key:'title',label:'书名',type:'text',placeholder:'书名'},
+      {key:'words',label:'字数（万字）',type:'number',placeholder:'20'}
     ],
-    calc: v => {
-      const diff = parseFloat(v.from) - parseFloat(v.to);
-      return diff > 0 ? diff * 500 : 0;
-    },
-    noteGen: v => `体脂率从 ${v.from}% 降到 ${v.to}%`,
-    unitValue: v => parseFloat(v.from) - parseFloat(v.to),
-    unitLabel: '%'
+    calc:function(v){return v.words*rate},
+    noteGen:function(v){return '读完《'+v.title+'》('+v.words+'万字)'},
+    unitValue:function(v){return v.words}, unitLabel:'万字'
   }, 'income');
 }
 
-// ===== 通用行为弹窗 =====
+function openSportSubSelect() {
+  document.getElementById('subSelectTitle').textContent = '🏃 选择运动类型';
+  document.getElementById('subSelectGrid').innerHTML =
+    '<div class="sub-select-btn" onclick="closeModal(\'subSelectModal\');startSport(\'boring\')">'+
+      '<div class="ss-icon">💪</div><div class="ss-label">无趣运动</div>'+
+      '<div class="ss-desc">跑步、健身等</div><div class="ss-amount">¥1/分钟</div></div>'+
+    '<div class="sub-select-btn" onclick="closeModal(\'subSelectModal\');startSport(\'fun\')">'+
+      '<div class="ss-icon">🏸</div><div class="ss-label">有趣运动</div>'+
+      '<div class="ss-desc">羽毛球、乒乓球等</div><div class="ss-amount">¥0.5/分钟</div></div>';
+  openModal('subSelectModal');
+}
+
+function startSport(type) {
+  var rate = type==='boring' ? 1 : 0.5;
+  var label = type==='boring' ? '无趣运动' : '有趣运动';
+  openActionModal({
+    id:'sport_'+type, icon:'🏃', label:label,
+    fields:[
+      {key:'stype',label:'运动类型',type:'text',placeholder:type==='boring'?'跑步/健身':'羽毛球/乒乓球'},
+      {key:'minutes',label:'时长（分钟）',type:'number',placeholder:'30'}
+    ],
+    calc:function(v){return v.minutes*rate},
+    noteGen:function(v){return v.stype+' '+v.minutes+'分钟'},
+    unitValue:function(v){return v.minutes}, unitLabel:'分钟'
+  }, 'income');
+}
+
+function openBodyFatReduceModal() {
+  openActionModal({
+    id:'bodyfat_reduce', icon:'🔥', label:'体脂下降',
+    fields:[
+      {key:'from',label:'上次体脂率（%）',type:'number',placeholder:'18.0'},
+      {key:'to',label:'当前体脂率（%）',type:'number',placeholder:'17.0'}
+    ],
+    calc:function(v){
+      var diff = parseFloat(v.from)-parseFloat(v.to);
+      return diff>0 ? diff*500 : 0;
+    },
+    noteGen:function(v){return '体脂率从 '+v.from+'% 降到 '+v.to+'%'},
+    unitValue:function(v){return parseFloat(v.from)-parseFloat(v.to)}, unitLabel:'%'
+  }, 'income');
+}
+
 function openActionModal(action, type) {
-  currentAction = { ...action, type };
-  const inner = document.getElementById('actionModalInner');
-  inner.className = `modal${type === 'expense' ? ' danger' : ''}`;
-  document.getElementById('actionModalTitle').textContent = `${action.icon} ${action.label}`;
-
-  const preview = document.getElementById('actionPreview');
-  preview.className = `preview-value ${type === 'income' ? 'pos' : 'neg'}`;
+  currentAction = {
+    id:action.id, icon:action.icon, label:action.label,
+    fields:action.fields, calc:action.calc, noteGen:action.noteGen,
+    unitValue:action.unitValue, unitLabel:action.unitLabel, type:type
+  };
+  var inner = document.getElementById('actionModalInner');
+  inner.className = 'modal'+(type==='expense'?' danger':'');
+  document.getElementById('actionModalTitle').textContent = action.icon+' '+action.label;
+  var preview = document.getElementById('actionPreview');
+  preview.className = 'preview-value '+(type==='income'?'pos':'neg');
   preview.textContent = '¥ 0';
-
-  let bodyHTML = '';
-  if (action.fields && action.fields.length === 0) {
-    const amt = action.calc({});
-    preview.textContent = `¥ ${Math.abs(amt).toFixed(2)}`;
-    bodyHTML = `<p style="text-align:center;color:var(--text-dim);font-size:13px;padding:10px 0 16px;">点击确认即可记录</p>`;
+  var bodyHTML = '';
+  if (action.fields && action.fields.length===0) {
+    var amt = action.calc({});
+    preview.textContent = '¥ '+Math.abs(amt).toFixed(2);
+    bodyHTML = '<p style="text-align:center;color:var(--text-dim);font-size:13px;padding:10px 0 16px;">点击确认即可记录</p>';
   } else if (action.fields) {
-    bodyHTML = (action.fields || []).map(f => `
-      <div class="form-group">
-        <label class="form-label">${f.label}</label>
-        <input type="${f.type}" class="form-input" id="af_${f.key}"
-          placeholder="${f.placeholder || ''}"
-          ${f.step ? `step="${f.step}"` : ''}
-          ${f.min !== undefined ? `min="${f.min}"` : ''}
-          ${f.max !== undefined ? `max="${f.max}"` : ''}
-          ${f.inputmode ? `inputmode="${f.inputmode}"` : ''}
-          oninput="updateActionPreview()"
-        />
-      </div>
-    `).join('');
+    bodyHTML = action.fields.map(function(f){
+      return '<div class="form-group"><label class="form-label">'+f.label+'</label>'+
+        '<input type="'+f.type+'" class="form-input" id="af_'+f.key+'"'+
+        ' placeholder="'+(f.placeholder||'')+'"'+
+        (f.step?' step="'+f.step+'"':'')+
+        ' oninput="updateActionPreview()"/></div>';
+    }).join('');
   }
-
   document.getElementById('actionModalBody').innerHTML = bodyHTML;
   openModal('actionModal');
 }
 
 function updateActionPreview() {
   if (!currentAction || !currentAction.fields) return;
-  const vals = {};
-  let ok = true;
-  currentAction.fields.forEach(f => {
-    const el = document.getElementById(`af_${f.key}`);
-    if (!el || !el.value) { ok = false; return; }
-    vals[f.key] = f.type === 'number' ? parseFloat(el.value) : el.value;
+  var vals = {};
+  var ok = true;
+  currentAction.fields.forEach(function(f){
+    var el = document.getElementById('af_'+f.key);
+    if (!el||!el.value){ok=false;return;}
+    vals[f.key] = f.type==='number' ? parseFloat(el.value) : el.value;
   });
   if (!ok) return;
-  const amt = currentAction.calc(vals);
-  document.getElementById('actionPreview').textContent = `¥ ${Math.abs(amt).toFixed(2)}`;
+  var amt = currentAction.calc(vals);
+  document.getElementById('actionPreview').textContent = '¥ '+Math.abs(amt).toFixed(2);
 }
 
 async function confirmAction() {
   if (!currentAction) return;
-  const vals = {};
-  for (const f of (currentAction.fields || [])) {
-    const el = document.getElementById(`af_${f.key}`);
-    if (!el || !el.value) { showToast('请填写完整信息', 'info'); return; }
-    vals[f.key] = f.type === 'number' ? parseFloat(el.value) : el.value;
+  var vals = {};
+  var fields = currentAction.fields || [];
+  for (var i=0;i<fields.length;i++) {
+    var f = fields[i];
+    var el = document.getElementById('af_'+f.key);
+    if (!el||!el.value){showToast('请填写完整信息','info');return;}
+    vals[f.key] = f.type==='number' ? parseFloat(el.value) : el.value;
   }
-  const amount = currentAction.calc(vals);
-  if (amount === 0 && currentAction.id === 'bodyfat_reduce') {
-    showToast('体脂率没有下降，无法获得奖励', 'info'); return;
-  }
-  const note = currentAction.noteGen(vals);
-  const unitValue = currentAction.unitValue(vals);
-  await saveRecord({ type: currentAction.type, category: currentAction.label, amount, note, unit_value: unitValue, unit_label: currentAction.unitLabel });
+  var amount = currentAction.calc(vals);
+  if (amount===0 && currentAction.id==='bodyfat_reduce'){showToast('体脂率没有下降','info');return;}
+  var note = currentAction.noteGen(vals);
+  var unitValue = currentAction.unitValue(vals);
+  await saveRecord({type:currentAction.type, category:currentAction.label, amount:amount, note:note, unit_value:unitValue, unit_label:currentAction.unitLabel});
   closeModal('actionModal');
-  showToast(`${amount >= 0 ? '+' : ''}¥${Math.abs(amount).toFixed(0)}  ${note}`, amount >= 0 ? 'pos' : 'neg');
+  showToast((amount>=0?'+':'')+'¥'+Math.abs(amount).toFixed(0)+'  '+note, amount>=0?'pos':'neg');
   await loadCurrentStats();
   await loadTodayRecords();
-  if (document.getElementById('ledgerOverlay').classList.contains('hidden') === false) loadLedger(true);
+  if (!document.getElementById('ledgerOverlay').classList.contains('hidden')) loadLedger(true);
 }
 
-// ===== 证书 =====
 function selectCert(amount, el) {
   certAmountSelected = amount;
-  document.querySelectorAll('.cert-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.cert-btn').forEach(function(b){b.classList.remove('selected')});
   el.classList.add('selected');
-  document.getElementById('certPreview').textContent = `¥ ${amount.toLocaleString()}`;
+  document.getElementById('certPreview').textContent = '¥ '+amount.toLocaleString();
 }
 
 async function confirmCert() {
-  const name = document.getElementById('certName').value.trim();
-  if (!name) { showToast('请输入证书名称', 'info'); return; }
-  if (!certAmountSelected) { showToast('请选择含金量等级', 'info'); return; }
-  await saveRecord({ type: 'income', category: '获得证书', amount: certAmountSelected, note: `获得证书：${name}`, unit_value: 1, unit_label: '张' });
+  var name = document.getElementById('certName').value.trim();
+  if (!name){showToast('请输入证书名称','info');return;}
+  if (!certAmountSelected){showToast('请选择含金量等级','info');return;}
+  await saveRecord({type:'income',category:'获得证书',amount:certAmountSelected,note:'获得证书：'+name,unit_value:1,unit_label:'张'});
   closeModal('certModal');
-  showToast(`🏆 +¥${certAmountSelected.toLocaleString()} 恭喜获证！`, 'pos');
-  certAmountSelected = 0;
-  document.getElementById('certName').value = '';
-  document.querySelectorAll('.cert-btn').forEach(b => b.classList.remove('selected'));
+  showToast('🏆 +¥'+certAmountSelected.toLocaleString()+' 恭喜获证！','pos');
+  certAmountSelected=0;
+  document.getElementById('certName').value='';
+  document.querySelectorAll('.cert-btn').forEach(function(b){b.classList.remove('selected')});
   await loadCurrentStats(); await loadTodayRecords();
 }
 
-// ===== 消费 =====
 async function confirmConsume() {
-  const cat = document.getElementById('consumeCat').value;
-  const amount = parseFloat(document.getElementById('consumeAmount').value);
-  const note = document.getElementById('consumeNote').value.trim();
-  if (!amount || amount <= 0) { showToast('请输入消费金额', 'info'); return; }
-  await saveRecord({ type: 'consume', category: cat, amount: -amount, note: note || cat, unit_value: amount, unit_label: '元' });
+  var cat = document.getElementById('consumeCat').value;
+  var amount = parseFloat(document.getElementById('consumeAmount').value);
+  var note = document.getElementById('consumeNote').value.trim();
+  if (!amount||amount<=0){showToast('请输入消费金额','info');return;}
+  await saveRecord({type:'consume',category:cat,amount:-amount,note:note||cat,unit_value:amount,unit_label:'元'});
   closeModal('consumeModal');
-  document.getElementById('consumeAmount').value = '';
-  document.getElementById('consumeNote').value = '';
-  showToast(`记录消费 -¥${amount.toFixed(0)}`, 'neg');
+  document.getElementById('consumeAmount').value='';
+  document.getElementById('consumeNote').value='';
+  showToast('记录消费 -¥'+amount.toFixed(0),'neg');
   await loadCurrentStats(); await loadTodayRecords();
 }
 
-// ===== 理财 =====
 function openInvestModal() {
-  const now = new Date();
-  const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  document.getElementById('investDesc').textContent = `${lm.getFullYear()}年${lm.getMonth()+1}月 理财盈亏（计入游戏账本 50%）`;
-  document.getElementById('investAmount').value = '';
-  document.getElementById('investPreview').textContent = '¥ 0';
-  investType = 'profit';
+  var now = new Date();
+  var lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  document.getElementById('investDesc').textContent = lm.getFullYear()+'年'+(lm.getMonth()+1)+'月 理财盈亏（计入游戏账本50%）';
+  document.getElementById('investAmount').value='';
+  document.getElementById('investPreview').textContent='¥ 0';
+  investType='profit';
   document.getElementById('investBtnProfit').classList.add('active');
   document.getElementById('investBtnLoss').classList.remove('active');
-  document.getElementById('investPreview').className = 'preview-value pos';
+  document.getElementById('investPreview').className='preview-value pos';
   openModal('investModal');
 }
 
 function setInvestType(type, el) {
-  investType = type;
-  document.querySelectorAll('.invest-type-btn').forEach(b => b.classList.remove('active'));
+  investType=type;
+  document.querySelectorAll('.invest-type-btn').forEach(function(b){b.classList.remove('active')});
   el.classList.add('active');
   updateInvestPreview();
 }
 
 function updateInvestPreview() {
-  const amount = parseFloat(document.getElementById('investAmount').value) || 0;
-  const game = amount * 0.5;
-  const preview = document.getElementById('investPreview');
-  preview.textContent = `¥ ${game.toFixed(2)}`;
-  preview.className = `preview-value ${investType === 'profit' ? 'pos' : 'neg'}`;
+  var amount = parseFloat(document.getElementById('investAmount').value)||0;
+  var game = amount*0.5;
+  var preview = document.getElementById('investPreview');
+  preview.textContent = '¥ '+game.toFixed(2);
+  preview.className = 'preview-value '+(investType==='profit'?'pos':'neg');
 }
 
 async function confirmInvest() {
-  const actual = parseFloat(document.getElementById('investAmount').value);
-  if (!actual || actual <= 0) { showToast('请输入金额', 'info'); return; }
-  const now = new Date();
-  const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const yearMonth = `${lm.getFullYear()}-${String(lm.getMonth()+1).padStart(2,'0')}`;
-  const gameAmt = actual * 0.5 * (investType === 'profit' ? 1 : -1);
-  const actualSigned = actual * (investType === 'profit' ? 1 : -1);
-  await db.from('investment_records').upsert({ year_month: yearMonth, actual_amount: actualSigned, game_amount: gameAmt });
-  await saveRecord({ type: investType === 'profit' ? 'income' : 'expense', category: '理财收益', amount: gameAmt, note: `${yearMonth}理财${investType==='profit'?'盈利':'亏损'} 实际¥${actual}，计入50%`, unit_value: actual, unit_label: '元' });
+  var actual = parseFloat(document.getElementById('investAmount').value);
+  if (!actual||actual<=0){showToast('请输入金额','info');return;}
+  var now = new Date();
+  var lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  var yearMonth = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  var gameAmt = actual*0.5*(investType==='profit'?1:-1);
+  var actualSigned = actual*(investType==='profit'?1:-1);
+  await db.from('investment_records').upsert({year_month:yearMonth,actual_amount:actualSigned,game_amount:gameAmt});
+  await saveRecord({type:investType==='profit'?'income':'expense',category:'理财收益',amount:gameAmt,note:yearMonth+'理财'+(investType==='profit'?'盈利':'亏损')+' 实际¥'+actual+'，计入50%',unit_value:actual,unit_label:'元'});
   closeModal('investModal');
-  showToast(`理财结算 ${gameAmt>=0?'+':''}¥${Math.abs(gameAmt).toFixed(0)}`, gameAmt>=0?'pos':'neg');
+  showToast('理财结算 '+(gameAmt>=0?'+':'')+'¥'+Math.abs(gameAmt).toFixed(0), gameAmt>=0?'pos':'neg');
   await loadCurrentStats(); await loadTodayRecords();
 }
 
 async function checkMonthlyInvest() {
-  const now = new Date();
-  if (now.getDate() !== 1) return;
-  const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const ym = `${lm.getFullYear()}-${String(lm.getMonth()+1).padStart(2,'0')}`;
-  const { data } = await db.from('investment_records').select('id').eq('year_month', ym);
-  if (!data || data.length === 0) setTimeout(() => openInvestModal(), 1200);
+  var now = new Date();
+  if (now.getDate()!==1) return;
+  var lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  var ym = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  var res = await db.from('investment_records').select('id').eq('year_month',ym);
+  if (!res.data||res.data.length===0) setTimeout(function(){openInvestModal()},1200);
 }
 
-// ===== 体重 =====
-function openWeightModal() { document.getElementById('newWeight').value = ''; openModal('weightModal'); }
+function openWeightModal() { document.getElementById('newWeight').value=''; openModal('weightModal'); }
 
 async function confirmWeight() {
-  const w = parseFloat(document.getElementById('newWeight').value);
-  if (!w || w <= 0) { showToast('请输入有效体重', 'info'); return; }
-  const lastWeight = currentWeight;
-  await db.from('weight_records').insert({ weight: w });
-  const diff = lastWeight - w;
-  if (diff > 0) {
-    const reward = diff * 200;
-    await saveRecord({ type: 'income', category: '体重下降', amount: reward, note: `体重 ${lastWeight}→${w}斤，减少${diff.toFixed(1)}斤`, unit_value: diff, unit_label: '斤' });
-    showToast(`减重 ${diff.toFixed(1)} 斤！+¥${reward.toFixed(0)}`, 'pos');
-  } else if (diff < 0) {
-    const penalty = Math.abs(diff) * 500;
-    await saveRecord({ type: 'expense', category: '体重增加', amount: -penalty, note: `体重 ${lastWeight}→${w}斤，增加${Math.abs(diff).toFixed(1)}斤`, unit_value: Math.abs(diff), unit_label: '斤' });
-    showToast(`体重增加 ${Math.abs(diff).toFixed(1)} 斤，-¥${penalty.toFixed(0)}`, 'neg');
-  } else {
-    showToast('体重无变化', 'info');
-  }
+  var w = parseFloat(document.getElementById('newWeight').value);
+  if (!w||w<=0){showToast('请输入有效体重','info');return;}
+  var lastWeight = currentWeight;
+  await db.from('weight_records').insert({weight:w});
+  var diff = lastWeight - w;
+  if (diff>0) {
+    var reward = diff*200;
+    await saveRecord({type:'income',category:'体重下降',amount:reward,note:'体重 '+lastWeight+'→'+w+'斤，减少'+diff.toFixed(1)+'斤',unit_value:diff,unit_label:'斤'});
+    showToast('减重 '+diff.toFixed(1)+' 斤！+¥'+reward.toFixed(0),'pos');
+  } else if (diff<0) {
+    var penalty = Math.abs(diff)*500;
+    await saveRecord({type:'expense',category:'体重增加',amount:-penalty,note:'体重 '+lastWeight+'→'+w+'斤，增加'+Math.abs(diff).toFixed(1)+'斤',unit_value:Math.abs(diff),unit_label:'斤'});
+    showToast('体重增加 '+Math.abs(diff).toFixed(1)+' 斤，-¥'+penalty.toFixed(0),'neg');
+  } else { showToast('体重无变化','info'); }
   closeModal('weightModal');
   await loadCurrentStats(); await loadTodayRecords();
   renderIncomeButtons();
 }
 
-// ===== 体脂 =====
 function openBodyFatModal() {
-  const locked = currentWeight > TARGET_WEIGHT;
-  document.getElementById('bodyFatLockTip').style.display = locked ? 'block' : 'none';
-  document.getElementById('newBodyFat').value = '';
+  var locked = currentWeight > TARGET_WEIGHT;
+  document.getElementById('bodyFatLockTip').style.display = locked?'block':'none';
+  document.getElementById('newBodyFat').value='';
   openModal('bodyFatModal');
 }
 
 async function confirmBodyFat() {
-  if (currentWeight > TARGET_WEIGHT) { showToast('需体重达到140斤后才能记录体脂', 'info'); return; }
-  const bf = parseFloat(document.getElementById('newBodyFat').value);
-  if (!bf || bf <= 0) { showToast('请输入有效体脂率', 'info'); return; }
-  await db.from('body_fat_records').insert({ body_fat: bf });
-  currentBodyFat = bf;
+  if (currentWeight>TARGET_WEIGHT){showToast('需体重达到140斤后才能记录体脂','info');return;}
+  var bf = parseFloat(document.getElementById('newBodyFat').value);
+  if (!bf||bf<=0){showToast('请输入有效体脂率','info');return;}
+  await db.from('body_fat_records').insert({body_fat:bf});
+  currentBodyFat=bf;
   closeModal('bodyFatModal');
-  showToast('体脂率已更新', 'info');
+  showToast('体脂率已更新','info');
   renderIncomeButtons();
 }
 
-// ===== 今日流水 =====
 async function loadTodayRecords() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const { data } = await db.from('records').select('*').gte('created_at', today.toISOString()).order('created_at', { ascending: false });
-  const container = document.getElementById('todayRecords');
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="e-icon">🎮</div><div class="e-text">今天还没有记录</div></div>';
+  var today = new Date(); today.setHours(0,0,0,0);
+  var res = await db.from('records').select('*').gte('created_at',today.toISOString()).order('created_at',{ascending:false});
+  var container = document.getElementById('todayRecords');
+  if (!res.data||res.data.length===0) {
+    container.innerHTML='<div class="empty-state"><div class="e-icon">🎮</div><div class="e-text">今天还没有记录</div></div>';
     return;
   }
-  container.innerHTML = data.map(r => renderRecordItem(r)).join('');
+  container.innerHTML = res.data.map(function(r){return renderRecordItem(r)}).join('');
 }
 
 function renderRecordItem(r) {
-  const icons = { income: '💹', expense: '💸', consume: '🛍️' };
-  const d = new Date(r.created_at);
-  const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  const dateStr = `${d.getMonth()+1}/${d.getDate()} ${timeStr}`;
-  const pos = r.amount >= 0;
-  return `
-    <div class="record-item" id="ri_${r.id}">
-      <div class="record-icon">${icons[r.type] || '📋'}</div>
-      <div class="record-info">
-        <div class="record-cat">${r.category}</div>
-        <div class="record-note">${r.note || ''}</div>
-        <div class="record-time">${dateStr}</div>
-      </div>
-      <div class="record-right">
-        <div class="record-amount ${pos?'pos':'neg'}">${pos?'+':''} ¥${Math.abs(r.amount).toFixed(0)}</div>
-        <button class="record-del" onclick="askDelete(${r.id},'${(r.category+'').replace(/'/g,'')}')" title="删除">🗑️</button>
-      </div>
-    </div>
-  `;
+  var icons = {income:'💹',expense:'💸',consume:'🛍️'};
+  var d = new Date(r.created_at);
+  var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var dateStr = (d.getMonth()+1)+'/'+d.getDate()+' '+timeStr;
+  var pos = r.amount>=0;
+  var cat = (r.category||'').replace(/'/g,'');
+  return '<div class="record-item" id="ri_'+r.id+'">'+
+    '<div class="record-icon">'+(icons[r.type]||'📋')+'</div>'+
+    '<div class="record-info">'+
+      '<div class="record-cat">'+r.category+'</div>'+
+      '<div class="record-note">'+(r.note||'')+'</div>'+
+      '<div class="record-time">'+dateStr+'</div>'+
+    '</div>'+
+    '<div class="record-right">'+
+      '<div class="record-amount '+(pos?'pos':'neg')+'">'+(pos?'+':'')+' ¥'+Math.abs(r.amount).toFixed(0)+'</div>'+
+      '<button class="record-del" onclick="askDelete('+r.id+',\''+cat+'\')">🗑️</button>'+
+    '</div>'+
+    '</div>';
 }
 
-// ===== 账本 =====
 function openLedger(filter) {
-  ledgerFilter = filter;
-  ledgerOffset = 0;
-  document.querySelectorAll('#ledgerFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
-  const map = { all: 0, income: 1, expense: 2, consume: 3 };
-  const tabs = document.querySelectorAll('#ledgerFilterTabs .filter-tab');
+  ledgerFilter=filter; ledgerOffset=0;
+  var tabs = document.querySelectorAll('#ledgerFilterTabs .filter-tab');
+  tabs.forEach(function(t){t.classList.remove('active')});
+  var map={all:0,income:1,expense:2,consume:3};
   if (tabs[map[filter]]) tabs[map[filter]].classList.add('active');
   openModal('ledgerOverlay');
   loadLedger(true);
 }
 
 function setLedgerFilter(filter, el) {
-  ledgerFilter = filter;
-  ledgerOffset = 0;
-  document.querySelectorAll('#ledgerFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+  ledgerFilter=filter; ledgerOffset=0;
+  document.querySelectorAll('#ledgerFilterTabs .filter-tab').forEach(function(t){t.classList.remove('active')});
   el.classList.add('active');
   loadLedger(true);
 }
 
-async function loadLedger(reset = false) {
-  if (reset) ledgerOffset = 0;
-  let query = db.from('records').select('*').order('created_at', { ascending: false }).range(ledgerOffset, ledgerOffset + LEDGER_PAGE - 1);
-  if (ledgerFilter !== 'all') query = query.eq('type', ledgerFilter);
-  const { data } = await query;
-  const container = document.getElementById('ledgerList');
-  if (reset) container.innerHTML = '';
-  if (!data || data.length === 0) {
-    if (reset) container.innerHTML = '<div class="empty-state"><div class="e-icon">📒</div><div class="e-text">暂无记录</div></div>';
-    document.getElementById('loadMoreBtn').style.display = 'none';
+async function loadLedger(reset) {
+  if (reset) ledgerOffset=0;
+  var query = db.from('records').select('*').order('created_at',{ascending:false}).range(ledgerOffset,ledgerOffset+LEDGER_PAGE-1);
+  if (ledgerFilter!=='all') query=query.eq('type',ledgerFilter);
+  var res = await query;
+  var container = document.getElementById('ledgerList');
+  if (reset) container.innerHTML='';
+  if (!res.data||res.data.length===0){
+    if(reset) container.innerHTML='<div class="empty-state"><div class="e-icon">📒</div><div class="e-text">暂无记录</div></div>';
+    document.getElementById('loadMoreBtn').style.display='none';
     return;
   }
-  container.innerHTML += data.map(r => renderRecordItem(r)).join('');
-  ledgerOffset += data.length;
-  document.getElementById('loadMoreBtn').style.display = data.length < LEDGER_PAGE ? 'none' : 'block';
+  container.innerHTML += res.data.map(function(r){return renderRecordItem(r)}).join('');
+  ledgerOffset += res.data.length;
+  document.getElementById('loadMoreBtn').style.display = res.data.length<LEDGER_PAGE?'none':'block';
 }
 
-function loadMoreRecords() { loadLedger(false); }
+function loadMoreRecords(){loadLedger(false)}
 
-// ===== 删除 =====
 function askDelete(id, desc) {
-  deletingRecordId = id;
-  deletingRecordDesc = desc;
-  document.getElementById('deleteRecordDesc').textContent = desc;
+  deletingRecordId=id;
+  document.getElementById('deleteRecordDesc').textContent=desc;
   openModal('deleteModal');
 }
 
 async function confirmDelete() {
   if (!deletingRecordId) return;
-  await db.from('records').delete().eq('id', deletingRecordId);
+  await db.from('records').delete().eq('id',deletingRecordId);
   closeModal('deleteModal');
-  showToast('记录已删除', 'info');
-  deletingRecordId = null;
+  showToast('记录已删除','info');
+  deletingRecordId=null;
   await loadCurrentStats();
   await loadTodayRecords();
   if (!document.getElementById('ledgerOverlay').classList.contains('hidden')) loadLedger(true);
 }
 
-// ===== 橱柜 =====
 function previewWishImg(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    wishImgBase64 = e.target.result;
-    document.getElementById('wishImgUpload').innerHTML = `<img src="${wishImgBase64}" /><input type="file" id="wishImgInput" accept="image/*" style="display:none" onchange="previewWishImg(event)" />`;
+  var file=event.target.files[0]; if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    wishImgBase64=e.target.result;
+    document.getElementById('wishImgUpload').innerHTML='<img src="'+wishImgBase64+'" /><input type="file" id="wishImgInput" accept="image/*" style="display:none" onchange="previewWishImg(event)"/>';
   };
   reader.readAsDataURL(file);
 }
 
 async function confirmWish() {
-  const name = document.getElementById('wishName').value.trim();
-  const price = parseFloat(document.getElementById('wishPrice').value);
-  const note = document.getElementById('wishNote').value.trim();
-  if (!name) { showToast('请输入商品名称', 'info'); return; }
-  if (!price || price <= 0) { showToast('请输入价格', 'info'); return; }
-  await db.from('wishlist').insert({ name, price, note, image_url: wishImgBase64 || null, is_purchased: false });
+  var name=document.getElementById('wishName').value.trim();
+  var price=parseFloat(document.getElementById('wishPrice').value);
+  var note=document.getElementById('wishNote').value.trim();
+  if(!name){showToast('请输入商品名称','info');return;}
+  if(!price||price<=0){showToast('请输入价格','info');return;}
+  await db.from('wishlist').insert({name:name,price:price,note:note,image_url:wishImgBase64||null,is_purchased:false});
   closeModal('wishModal');
-  document.getElementById('wishName').value = '';
-  document.getElementById('wishPrice').value = '';
-  document.getElementById('wishNote').value = '';
-  document.getElementById('wishImgUpload').innerHTML = `<span style="font-size:28px">📷</span><span class="img-upload-hint">点击上传图片</span><input type="file" id="wishImgInput" accept="image/*" style="display:none" onchange="previewWishImg(event)" />`;
-  wishImgBase64 = null;
-  showToast(`已添加「${name}」到橱柜`, 'pos');
+  document.getElementById('wishName').value='';
+  document.getElementById('wishPrice').value='';
+  document.getElementById('wishNote').value='';
+  document.getElementById('wishImgUpload').innerHTML='<span style="font-size:28px">📷</span><span class="img-upload-hint">点击上传图片</span><input type="file" id="wishImgInput" accept="image/*" style="display:none" onchange="previewWishImg(event)"/>';
+  wishImgBase64=null;
+  showToast('已添加「'+name+'」到橱柜','pos');
   await loadWishlist();
 }
 
 async function loadWishlist() {
-  const { data } = await db.from('wishlist').select('*').eq('is_purchased', false).order('created_at', { ascending: false });
-  const grid = document.getElementById('wishlistGrid');
-  if (!data || data.length === 0) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="e-icon">🛍️</div><div class="e-text">橱柜空空的<br>添加想买的东西来激励自己！</div></div>';
+  var res = await db.from('wishlist').select('*').eq('is_purchased',false).order('created_at',{ascending:false});
+  var grid=document.getElementById('wishlistGrid');
+  if(!res.data||res.data.length===0){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="e-icon">🛍️</div><div class="e-text">橱柜空空的<br>添加想买的东西来激励自己！</div></div>';
     return;
   }
-  grid.innerHTML = data.map(w => {
-    const can = currentBalance >= w.price;
-    return `
-      <div class="wish-card ${can ? 'affordable' : ''}">
-        <div class="wish-img-wrap">${w.image_url ? `<img src="${w.image_url}" />` : '🎁'}</div>
-        <div class="wish-info">
-          <div class="wish-name">${w.name}</div>
-          <div class="wish-price">¥${w.price.toLocaleString()}</div>
-          <div class="wish-actions">
-            <button class="btn btn-sm ${can ? 'btn-primary' : 'btn-ghost'}" style="flex:1;font-size:10px" onclick="openBuyModal(${w.id},'${w.name.replace(/'/g,'')}',${w.price})">${can ? '🛒 购买' : '🔒 不够'}</button>
-            <button class="btn btn-ghost btn-sm" onclick="deleteWish(${w.id})" style="font-size:12px">🗑️</button>
-          </div>
-        </div>
-        <div class="wish-badge ${can ? 'can' : 'cant'}">${can ? '✓ 可买' : '攒钱'}</div>
-      </div>
-    `;
+  grid.innerHTML=res.data.map(function(w){
+    var can=currentBalance>=w.price;
+    var wname=w.name.replace(/'/g,'');
+    return '<div class="wish-card'+(can?' affordable':'')+'">'+
+      '<div class="wish-img-wrap">'+(w.image_url?'<img src="'+w.image_url+'" />':'🎁')+'</div>'+
+      '<div class="wish-info">'+
+        '<div class="wish-name">'+w.name+'</div>'+
+        '<div class="wish-price">¥'+w.price.toLocaleString()+'</div>'+
+        '<div class="wish-actions">'+
+          '<button class="btn btn-sm '+(can?'btn-primary':'btn-ghost')+'" style="flex:1;font-size:10px" onclick="openBuyModal('+w.id+',\''+wname+'\','+w.price+')">'+(can?'🛒 购买':'🔒 不够')+'</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="deleteWish('+w.id+')" style="font-size:12px">🗑️</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="wish-badge '+(can?'can':'cant')+'">'+(can?'✓ 可买':'攒钱')+'</div>'+
+      '</div>';
   }).join('');
 }
 
-function refreshWishlistAffordable() {
-  if (document.getElementById('page-shop').classList.contains('active')) loadWishlist();
-}
-
-function openBuyModal(id, name, price) {
-  if (currentBalance < price) { showToast('余额不足，继续加油！', 'neg'); return; }
-  buyingWishId = id;
-  document.getElementById('buyModalBody').innerHTML = `
-    <div class="confirm-icon">🎉</div>
-    <div class="confirm-text">确认购买<br><span class="confirm-highlight">「${name}」</span><br><br>
-    <span style="font-family:var(--pixel);font-size:12px;color:var(--warn)">¥${price.toLocaleString()}</span><br><br>
-    将从游戏余额中扣除</div>
-  `;
+function openBuyModal(id,name,price) {
+  if(currentBalance<price){showToast('余额不足，继续加油！','neg');return;}
+  buyingWishId=id;
+  document.getElementById('buyModalBody').innerHTML=
+    '<div class="confirm-icon">🎉</div>'+
+    '<div class="confirm-text">确认购买<br><span class="confirm-highlight">「'+name+'」</span><br><br>'+
+    '<span style="font-family:var(--pixel);font-size:12px;color:var(--warn)">¥'+price.toLocaleString()+'</span><br><br>将从游戏余额中扣除</div>';
   openModal('buyModal');
 }
 
 async function confirmBuy() {
-  if (!buyingWishId) return;
-  const { data } = await db.from('wishlist').select('*').eq('id', buyingWishId).single();
-  if (!data) return;
-  await saveRecord({ type: 'consume', category: '橱柜购买', amount: -data.price, note: `购买：${data.name}`, unit_value: data.price, unit_label: '元' });
-  await db.from('wishlist').update({ is_purchased: true }).eq('id', buyingWishId);
+  if(!buyingWishId)return;
+  var res=await db.from('wishlist').select('*').eq('id',buyingWishId).single();
+  if(!res.data)return;
+  await saveRecord({type:'consume',category:'橱柜购买',amount:-res.data.price,note:'购买：'+res.data.name,unit_value:res.data.price,unit_label:'元'});
+  await db.from('wishlist').update({is_purchased:true}).eq('id',buyingWishId);
   closeModal('buyModal');
-  showToast(`🎉 恭喜拿下「${data.name}」！`, 'pos');
-  buyingWishId = null;
+  showToast('🎉 恭喜拿下「'+res.data.name+'」！','pos');
+  buyingWishId=null;
   await loadCurrentStats();
   await loadWishlist();
 }
 
 async function deleteWish(id) {
-  await db.from('wishlist').delete().eq('id', id);
-  showToast('已从橱柜移除', 'info');
+  await db.from('wishlist').delete().eq('id',id);
+  showToast('已从橱柜移除','info');
   await loadWishlist();
 }
 
-// ===== 数据导出 =====
 async function exportData() {
-  const { data: records } = await db.from('records').select('*').order('created_at', { ascending: false });
-  const { data: weights } = await db.from('weight_records').select('*');
-  const { data: wishlist } = await db.from('wishlist').select('*');
-  const { data: investments } = await db.from('investment_records').select('*');
-  const blob = new Blob([JSON.stringify({ records, weights, wishlist, investments }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = `life_rpg_${new Date().toISOString().slice(0,10)}.json`;
+  var r1=await db.from('records').select('*').order('created_at',{ascending:false});
+  var r2=await db.from('weight_records').select('*');
+  var r3=await db.from('wishlist').select('*');
+  var r4=await db.from('investment_records').select('*');
+  var blob=new Blob([JSON.stringify({records:r1.data,weights:r2.data,wishlist:r3.data,investments:r4.data},null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url;
+  a.download='life_rpg_'+new Date().toISOString().slice(0,10)+'.json';
   a.click(); URL.revokeObjectURL(url);
-  showToast('数据已导出', 'pos');
+  showToast('数据已导出','pos');
 }
 
-// ===== UI UTILS =====
 function switchPage(page, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  if (el) el.classList.add('active');
-  if (page === 'home') { loadTodayRecords(); loadCurrentStats(); }
-  if (page === 'shop') loadWishlist();
-  if (page === 'income') renderIncomeButtons();
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+  document.getElementById('page-'+page).classList.add('active');
+  if(el) el.classList.add('active');
+  if(page==='home'){loadTodayRecords();loadCurrentStats();}
+  if(page==='shop') loadWishlist();
+  if(page==='income') renderIncomeButtons();
 }
 
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function openModal(id){document.getElementById(id).classList.remove('hidden')}
+function closeModal(id){document.getElementById(id).classList.add('hidden')}
 
-function showToast(msg, type = 'info') {
-  const c = document.getElementById('toastContainer');
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.textContent = msg;
+function showToast(msg, type) {
+  type = type||'info';
+  var c=document.getElementById('toastContainer');
+  var t=document.createElement('div');
+  t.className='toast '+type;
+  t.textContent=msg;
   c.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2800);
+  setTimeout(function(){
+    t.style.opacity='0'; t.style.transition='opacity 0.3s';
+    setTimeout(function(){t.remove()},300);
+  },2800);
 }
 
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.add('hidden'); });
+document.querySelectorAll('.modal-overlay').forEach(function(o){
+  o.addEventListener('click',function(e){if(e.target===o)o.classList.add('hidden')});
 });
 
 init();
